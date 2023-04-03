@@ -1,0 +1,40 @@
+---
+title: "bcSamplingPlot"
+author: "Blake Baleami"
+date: "12/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## About this file
+
+This is an R markdown file created by Blake with all of Corey's code from the bcSamplingPlot.R file in this same directory that was pulled from the origin branch in GitHub. Any changes to Corey's code will be noted in the comments before an R code chunk. 
+
+## First set of plots
+
+The title of this section will be changed once I figure out what this section of code is doing. 
+
+Changes made to the code: 
+* comments have been added
+
+```{r}
+# load packages
+library(reshape2)
+library(ggplot2)
+
+# read in csv files
+bcDat <- read.csv('../data/bcPlot.csv')
+bcNum <- read.csv('../data/bcCount_allTechReps.csv')
+
+
+```
+
+Blake's notes:
+* bcDat: 216 obs of 6 var, {X = [0, 215] (n row - 1 in numbering), Barcode = DNA sequence, variable = ["rep1", "rep2", "rep3"], value = [26928, 583588], condition = ["Untreated", "Idling"], Number = [1, 36]}, all numeric values are `integer` class of object/variable
+  * not sure what variable, value, or Number columns specifically correspond to yet, below is a printed summary of the data frame
+* bcNum: 3651 obs of 7 var, {}
+
+

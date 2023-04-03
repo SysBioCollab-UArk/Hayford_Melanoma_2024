@@ -1,0 +1,267 @@
+---
+title: "Calcium Flux Analysis - Philip's Data"
+author: "Blake Baleami"
+date: "1/26/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The following is a calcium flux analysis of Philip Stauffer's data shared with Blake on 1/26/2022. It uses some of Corey's code from caFlux_untreadedidling.R. 
+
+```{r}
+# load packages
+library(ggplot2)
+library(reshape2)
+library(readxl)
+
+# read in the data file
+ca_dat <- read_xlsx("~/Downloads/VQU_008_CPA_3add_1tip_FLUO-8_AM_Feb_12_21_1023.xlsx", skip = 17)
+
+# wells B1-B8 contained SKMEL5_N (untreated) cells with CPA and Ca added
+# wells J1-J8 contained SKMEL5_T (idling) cells with CPA and Ca added
+# parse the data frame to only include wells B1-B8 and J1-J8 in the analysis
+ca_dat_SKMEL5_test <- ca_dat[1:681, c("Time", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8")]
+
+### normalize the data ###
+# create a new data frame that I'll have one method for normalizing
+ca_dat_SKMEL5_test_subNorm <- ca_dat_SKMEL5_test
+
+
+# subtract the first intensity value from all of the intensity values in that well to normalize intensity -- this is the only way to start with intensity = 0
+for (i in 2:17){
+  ca_dat_SKMEL5_test_subNorm[, i] <- ca_dat_SKMEL5_test_subNorm[, i] - rep(ca_dat_SKMEL5_test_subNorm[1, i], length(ca_dat_SKMEL5_test_subNorm[, i]))
+}
+
+# calculate the mean peak for ionomycin for both untreated and idling
+ca_dat_SKMEL5_test_ionomycinMax <- apply(ca_dat_SKMEL5_test_subNorm[550:681, 2:17],  2, max)
+ca_dat_SKMEL5_test_ionomycinMaxMeans <- c(mean(ca_dat_SKMEL5_test_ionomycinMax[1:8]), mean(ca_dat_SKMEL5_test_ionomycinMax[9:16]))
+
+
+# divide all of the values by the mean ionomycin max peak for each treatment
+# untreated
+for (i in 2:9){
+  ca_dat_SKMEL5_test_subNorm[, i] <- ca_dat_SKMEL5_test_subNorm[, i] * rep(1/ca_dat_SKMEL5_test_ionomycinMaxMeans[1], length(ca_dat_SKMEL5_test_subNorm[, i]))
+}
+#idling
+for (i in 10:17){
+  ca_dat_SKMEL5_test_subNorm[, i] <- ca_dat_SKMEL5_test_subNorm[, i] * rep(1/ca_dat_SKMEL5_test_ionomycinMaxMeans[2], length(ca_dat_SKMEL5_test_subNorm[, i]))
+}
+
+## using division for the first data point instead of subtraction to normalize##
+# create a new data frame
+ca_dat_SKMEL5_test_divNorm <- ca_dat_SKMEL5_test
+
+# divide every entry in the column by the first value in that column
+for (i in 2:17){
+  ca_dat_SKMEL5_test_divNorm[, i] <- ca_dat_SKMEL5_test_divNorm[, i] * rep(1/ca_dat_SKMEL5_test_divNorm[1, i], length(ca_dat_SKMEL5_test_divNorm[, i]))
+}
+
+# find the max ionomycin peaks, then find the means for each treatment group
+ca_dat_SKMEL5_test_divNorm_ionoMax <- apply(ca_dat_SKMEL5_test_divNorm[550:681, 2:17],  2, max)
+ca_dat_SKMEL5_test_divNorm_ionoMaxMeans <- c(mean(ca_dat_SKMEL5_test_divNorm_ionoMax[1:8]), mean(ca_dat_SKMEL5_test_divNorm_ionoMax[9:16]))
+
+# normalize data cell count by dividing each treatment group by the mean ionomycin max peak value
+# untreated
+for (i in 2:9){
+  ca_dat_SKMEL5_test_divNorm[, i] <- ca_dat_SKMEL5_test_divNorm[, i] * rep(1/ca_dat_SKMEL5_test_divNorm_ionoMaxMeans[1], length(ca_dat_SKMEL5_test_divNorm[, i]))
+}
+#idling
+for (i in 10:17){
+  ca_dat_SKMEL5_test_divNorm[, i] <- ca_dat_SKMEL5_test_divNorm[, i] * rep(1/ca_dat_SKMEL5_test_divNorm_ionoMaxMeans[2], length(ca_dat_SKMEL5_test_divNorm[, i]))
+}
+
+# calculate the means for each treatment group for plotting
+# ca_dat_SKMEL5_test_subNorm$UT_mean <- apply(ca_dat_SKMEL5_test_subNorm[, 2:9], 1, mean)
+# ca_dat_SKMEL5_test_subNorm$I_mean <- apply(ca_dat_SKMEL5_test_subNorm[, 10:17], 1, mean)
+# ca_dat_SKMEL5_test_divNorm$UT_mean <- apply(ca_dat_SKMEL5_test_divNorm[, 2:9], 1, mean)
+# ca_dat_SKMEL5_test_divNorm$I_mean <- apply(ca_dat_SKMEL5_test_divNorm[, 10:17], 1, mean)
+
+# melt the data frames
+ca_dat_test_subNorm_melt <- melt(ca_dat_SKMEL5_test_subNorm, value.name = "normIntensity", variable.name = "Well", id.vars = "Time")
+ca_dat_test_divNorm_melt <- melt(ca_dat_SKMEL5_test_divNorm, value.name = "normIntensity", variable.name = "Well", id.vars = "Time")
+
+# ca_dat_melt <- melt(ca_dat, value.name = "Intensity", variable.name = "Well", id.vars = "Time")
+
+# identify the row and column of the data frames
+ca_dat_test_subNorm_melt$row <- substr(ca_dat_test_subNorm_melt$Well, 1, 1)
+ca_dat_test_subNorm_melt$column <- substr(ca_dat_test_subNorm_melt$Well, 2, 3)
+ca_dat_test_divNorm_melt$row <- substr(ca_dat_test_divNorm_melt$Well, 1, 1)
+ca_dat_test_divNorm_melt$column <- substr(ca_dat_test_divNorm_melt$Well, 2, 3)
+# ca_dat_melt$row <- substr(ca_dat_melt$Well, 1, 1)
+# ca_dat_melt$column <- substr(ca_dat_melt$Well, 2, 3)
+
+
+# labeling the populations of cells for the wells
+ca_dat_test_subNorm_melt$pop <- rep(c("idling", "untreated"), each = 681*8)
+ca_dat_test_divNorm_melt$pop <- rep(c("idling", "untreated"), each = 681*8)
+
+# there are NA for indicator data that may be messing up the plot, so the next line removes those from the data
+ca_dat_test_subNorm_melt <- na.omit(ca_dat_test_subNorm_melt)
+ca_dat_test_divNorm_melt <- na.omit(ca_dat_test_divNorm_melt)
+
+# time is being represented as a character type instead of numeric, which causes issues plotting - this code changes the class back to numeric and round the time to thousandths place
+ca_dat_test_divNorm_melt$Time <- round(as.numeric(ca_dat_test_divNorm_melt$Time), digits = 3)
+ca_dat_test_subNorm_melt$Time <- round(as.numeric(ca_dat_test_subNorm_melt$Time), digits = 3)
+
+##  corey's method for normalization  ##
+# copy data frames from melted data frames
+ca_dat_subNorm_test1 <- ca_dat_test_subNorm_melt
+ca_dat_divNorm_test2 <- ca_dat_test_divNorm_melt
+
+dn1 <- data.frame()
+dn2 <- data.frame()
+
+# looks like there is some normalization based on subtracting the minimum intensity and that becoming the starting point for the data
+for(i in unique(ca_dat_test_subNorm_melt$Well)){
+  # print(i)
+  temp <- subset(ca_dat_test_subNorm_melt, ca_dat_test_subNorm_melt$Well==i)
+  temp$newnormIntensity <- temp$normIntensity - temp$normIntensity[temp$Time == temp$Time[which.min(temp$normIntensity)]]
+  temp1 <- temp[which.min(temp$normIntensity):length(temp$normIntensity),]
+  dn1 <- rbind(dn1, temp1)
+}
+
+for(i in unique(ca_dat_test_divNorm_melt$Well)){
+  # print(i)
+  temp <- subset(ca_dat_test_divNorm_melt, ca_dat_test_divNorm_melt$Well==i)
+  temp$newnormIntensity <- temp$normIntensity - temp$normIntensity[temp$Time == temp$Time[which.min(temp$normIntensity)]]
+  temp2 <- temp[which.min(temp$normIntensity):length(temp$normIntensity),]
+  dn2 <- rbind(dn2, temp2)
+}
+
+# number after reagant refers to seconds during the assay the reagant was added
+ca_dat_CPA20_Ca281_iono549_subNorm <- dn1[, ] 
+ca_dat_CPA20_Ca281_iono549_divNorm <- dn2[, ]
+# without the iono curve that was used to normalize for the number of cells in the assay
+ca_dat_CPA20_Ca281_subNorm <- subset(dn1, Time < 549)
+ca_dat_CPA20_Ca281_divNorm <- subset(dn2, Time < 549)
+
+# calculate AUC for second peak
+ca_dat_ca281_subNorm_idling <- subset(dn1, Time > 281 & Time < 549 & pop == "idling") # time the calcium was added (SOCE activation time?)
+ca_dat_ca281_subNorm_untreated <- subset(dn1, Time > 281 & Time < 549 & pop == "untreated")
+ca_dat_ca281_divNorm_idling <- subset(dn2, Time > 281 & Time < 549 & pop == "idling")
+ca_dat_ca281_divNorm_untreated <- subset(dn2, Time > 281 & Time < 549 & pop == "untreated")
+
+# calculate AUC
+library(Bolstad2)
+ca_dat_AUC_untreated_subNorm <- sintegral(ca_dat_ca281_subNorm_untreated$Time, ca_dat_ca281_subNorm_untreated$newnormIntensity)$int
+ca_dat_AUC_idling_subNorm <- sintegral(ca_dat_ca281_subNorm_idling$Time, ca_dat_ca281_subNorm_untreated$newnormIntensity)$int
+ca_dat_AUC_untreated_divNorm <- sintegral(ca_dat_ca281_divNorm_untreated$Time, ca_dat_ca281_divNorm_untreated$newnormIntensity)$int
+ca_dat_AUC_idling_divNorm <- sintegral(ca_dat_ca281_divNorm_idling$Time, ca_dat_ca281_divNorm_untreated$newnormIntensity)$int
+# weirdly, both of these give the same numbers for each treatment group
+
+library(MESS)
+ca_dat_AUC_untreated_subNorm2 <- auc(ca_dat_ca281_subNorm_untreated$Time, ca_dat_ca281_subNorm_untreated$newnormIntensity, type = "spline")
+ca_dat_AUC_idling_subNorm2 <- auc(ca_dat_ca281_subNorm_idling$Time, ca_dat_ca281_subNorm_untreated$newnormIntensity, type = "spline")
+ca_dat_AUC_untreated_divNorm2 <- auc(ca_dat_ca281_divNorm_untreated$Time, ca_dat_ca281_divNorm_untreated$newnormIntensity, type = "spline")
+ca_dat_AUC_idling_divNorm2 <- auc(ca_dat_ca281_divNorm_idling$Time, ca_dat_ca281_divNorm_untreated$newnormIntensity, type = "spline")
+
+# calculate mean peak difference from iono peak to Ca peak for each treatment
+# straight up difference in means
+ca_dat_SKMEL5_test_subNorm$UT_mean <- apply(ca_dat_SKMEL5_test_subNorm[, 2:9], 1, mean)
+ca_dat_SKMEL5_test_subNorm$I_mean <- apply(ca_dat_SKMEL5_test_subNorm[, 10:17], 1, mean)
+ca_dat_SKMEL5_test_divNorm$UT_mean <- apply(ca_dat_SKMEL5_test_divNorm[, 2:9], 1, mean)
+ca_dat_SKMEL5_test_divNorm$I_mean <- apply(ca_dat_SKMEL5_test_divNorm[, 10:17], 1, mean)
+
+UT_subNorm_peakdif <- abs(max(ca_dat_SKMEL5_test_subNorm$UT_mean[281:548]) - max(ca_dat_SKMEL5_test_subNorm$UT_mean[549:length(ca_dat_SKMEL5_test_subNorm$UT_mean)]))
+I_subNorm_peakdif <- abs(max(ca_dat_SKMEL5_test_subNorm$I_mean[281:548]) - max(ca_dat_SKMEL5_test_subNorm$I_mean[549:length(ca_dat_SKMEL5_test_subNorm$I_mean)]))
+UT_divNorm_peakdif <- abs(max(ca_dat_SKMEL5_test_divNorm$UT_mean[281:548]) - max(ca_dat_SKMEL5_test_divNorm$UT_mean[549:length(ca_dat_SKMEL5_test_divNorm$UT_mean)]))
+I_divNorm_peakdif <- abs(max(ca_dat_SKMEL5_test_divNorm$I_mean[281:548]) - max(ca_dat_SKMEL5_test_divNorm$I_mean[549:length(ca_dat_SKMEL5_test_divNorm$I_mean)]))
+
+peak_metrics <- data.frame(
+  pop = rep(c("untreated", "idling"), times = 2),
+  abs_mean_peak_dif = c(UT_subNorm_peakdif, I_subNorm_peakdif, UT_divNorm_peakdif, I_divNorm_peakdif),
+  auc_spline = c(ca_dat_AUC_untreated_subNorm2, ca_dat_AUC_idling_subNorm2, ca_dat_AUC_untreated_divNorm2, ca_dat_AUC_idling_divNorm2),
+  auc_sintegral = c(ca_dat_AUC_untreated_subNorm, ca_dat_AUC_idling_subNorm, ca_dat_AUC_untreated_divNorm, ca_dat_AUC_idling_divNorm),
+  normalization = rep(c("sub", "div"), each = 2)
+)
+peak_metrics
+
+ggplot(ca_dat_CPA20_Ca281_iono549_subNorm) + 
+  stat_summary(aes(x = Time, y = newnormIntensity, color = pop, fill = pop), fun.data = "mean_cl_normal", geom = "smooth", se = T) + 
+  scale_fill_manual(values = c("idling" = "blue", "untreated" = "red")) + scale_color_manual(values = c("idling" = "blue", "untreated" = "red")) +
+  theme(legend.position = c(0.8, 0.1))
+
+ggplot(ca_dat_CPA20_Ca281_iono549_subNorm) +
+  geom_rect(data = NULL, aes(xmin = 281, xmax = 548, ymin = -Inf, ymax = Inf), fill = "lightyellow", alpha = 0.02) +
+  geom_rect(data = NULL, aes(xmin = 549, xmax = Inf, ymin = -Inf, ymax = Inf), fill = "lightyellow3", alpha = 0.02) + 
+  stat_summary(aes(x=Time, y=newnormIntensity, color=pop, fill=pop), fun.data = "mean_cl_normal", geom = "smooth", se=T) +
+  theme_bw() +
+  theme(legend.text = element_text(size = 12), legend.position = "right",
+        plot.title = element_text(size = 12, hjust = 0.5), axis.text=element_text(size=12),
+        legend.title = element_blank(), axis.title=element_text(size=12),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(x = "Time (seconds)", y = "Relative Fluorescence") + scale_color_manual(values = c("idling" = "blue", "untreated" = "red")) +
+  scale_fill_manual(values = c("idling" = "blue", "untreated" = "red")) + 
+  # geom_rect(data = NULL, aes(ymin = -Inf, ymax = Inf, xmin = 281, xmax = 548), fill = "pink", alpha = 0.02) +
+  xlim(min(ca_dat_CPA20_Ca281_iono549_subNorm$Time), max(ca_dat_CPA20_Ca281_iono549_subNorm$Time)) + 
+  ylim(0, 3)
+ggsave("~/Downloads/testCaFlux_subNorm_CoreysStartNorm_withIono.pdf", width = 4, height = 3)
+
+ggplot(ca_dat_CPA20_Ca281_subNorm, aes(x=Time, y=newnormIntensity, color=pop, fill=pop)) +
+  stat_summary(fun.data = "mean_cl_normal", geom = "smooth", se=T) +
+  theme_bw() +
+  theme(legend.text = element_text(size = 12), legend.position = c(0.9, 0.1),
+        plot.title = element_text(size = 12, hjust = 0.5), axis.text=element_text(size=12),
+        legend.title = element_blank(), axis.title=element_text(size=12),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(x = "Time (seconds)", y = "Normalized Intensity") + scale_color_manual(values = c("blue", "red")) +
+  scale_fill_manual(values = c("blue", "red")) + 
+  ggtitle(label = "Calcium Flux Assay without Ionomycin Data", subtitle = "Normalization with subtraction")
+ggsave("~/Downloads/testCaFlux_subNorm_CoreysStartNorm_withoutIono.pdf", width = 4, height = 3)
+
+
+plt_divNorm_withIono <- ggplot(ca_dat_CPA20_Ca281_iono549_divNorm, aes(x=Time, y=newnormIntensity, color=pop, fill=pop)) +
+  stat_summary(fun.data = "mean_cl_normal", geom = "smooth", se=T) +
+  theme_bw() +
+  theme(legend.text = element_text(size = 12), legend.position = c(600, 0.5),
+        plot.title = element_text(size = 12, hjust = 0.5), axis.text=element_text(size=12),
+        legend.title = element_blank(), axis.title=element_text(size=12),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(x = "Time (seconds)", y = "Normalized Intensity") + scale_color_manual(values = c("idling" = "blue", "untreated" = "red")) +
+  scale_fill_manual(values = c("idling" = "blue", "untreated" = "red")) + 
+  ggtitle(label = "Calcium Flux Assay", subtitle = "Normalization with division then subtraction")
+plt_divNorm_withIono
+ggsave("~/Downloads/testCaFlux_divNorm_CoreysStartNorm_withIono.pdf", width = 4, height = 3)
+
+plt_divNorm_withIono_leg <- ggpubr::get_legend(plt_divNorm_withIono)
+as_ggplot(plt_divNorm_withIono_leg) 
+
+ggplot(ca_dat_CPA20_Ca281_divNorm, aes(x=Time, y=newnormIntensity, color=pop, fill=pop)) +
+  stat_summary(fun.data = "mean_cl_normal", geom = "smooth", se=T) +
+  theme_bw() +
+  theme(legend.text = element_text(size = 12), legend.position = c(600, 0.5),
+        plot.title = element_text(size = 12, hjust = 0.5), axis.text=element_text(size=12),
+        legend.title = element_blank(), axis.title=element_text(size=12),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(x = "Time (seconds)", y = "Normalized Intensity") + scale_color_manual(values = c("blue", "red")) +
+  scale_fill_manual(values = c("blue", "red")) + 
+  ggtitle(label = "Calcium Flux Assay without Ionomycin Data", subtitle = "Normalization with division then subtraction")
+ggsave("~/Downloads/testCaFlux_divNorm_CoreysStartNorm_withoutIono.pdf", width = 4, height = 3)
+
+```
+
+```{r}
+ggplot(ca_dat_CPA20_Ca281_iono549_divNorm) +
+  geom_rect(data = NULL, aes(xmin = 281, xmax = 548, ymin = -Inf, ymax = Inf), fill = "lightyellow", alpha = 0.1) +
+  geom_rect(data = NULL, aes(xmin = 549, xmax = Inf, ymin = -Inf, ymax = Inf), fill = "wheat", alpha = 0.1) + 
+  stat_summary(aes(x=Time, y=newnormIntensity, color=pop, fill=pop), fun.data = "mean_cl_normal", geom = "smooth", se=T) +
+  theme_bw() +
+  theme(legend.text = element_text(size = 10), 
+        plot.title = element_text(size = 12, hjust = 0.5), axis.text=element_text(size=12),
+        legend.title = element_blank(), axis.title=element_text(size=12),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(x = "Time (seconds)", y = "Relative Fluorescence") + scale_color_manual(values = c("idling" = "blue", "untreated" = "red")) +
+  scale_fill_manual(values = c("idling" = "blue", "untreated" = "red")) + 
+  # geom_rect(data = NULL, aes(ymin = -Inf, ymax = Inf, xmin = 281, xmax = 548), fill = "pink", alpha = 0.02) +
+  xlim(min(ca_dat_CPA20_Ca281_iono549_subNorm$Time), max(ca_dat_CPA20_Ca281_iono549_subNorm$Time)) + 
+  ylim(0, 0.85) + 
+  ggpubr::geom_bracket(xmin = 20, xmax = 280, y.position = 0.8, label = "+CPA") +
+  ggpubr::geom_bracket(xmin = 281, xmax = 548, y.position = 0.8, label = "+Calcium") +
+  ggpubr::geom_bracket(xmin = 549, xmax = max(ca_dat_CPA20_Ca281_iono549_subNorm$Time), y.position = 0.8, label = "+Ionomycin")
+ggsave("~/Downloads/test_CaFlux_divnorm_withIono_labels.pdf", width = 6, height = 3)
+```
+
+
