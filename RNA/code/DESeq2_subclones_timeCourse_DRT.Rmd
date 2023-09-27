@@ -1,0 +1,1241 @@
+---
+title: "RNAseq DESeq2 Time Course"
+author: "Corey Hayford (modifed from Jack)"
+date: "November 2018-January 2019"
+output: html_notebook
+---
+
+### DRT modified file to work on any computer
+2022-01-17
+Some files appeared to be missing to run this notebook. Trying to get all to run
+
+## Overview
+This is a pipeline for differential analysis of RNASeq data from SKMEL5 sublines using DESeq2 statistical package. Three sublines: SC01 (*regressing*), SC07 (*stationary*) and SC10 (*expanding*) were analyzed for gene expression differences. In addition, time course changes in 8uM PLX4720 were also performed for each subline. Time points are: 0, 3d, 8d. The differential analysis will be performed based on the contrasts defined below. 
+General steps for the analysis are:
+  
+###1. Read counts table: 
++ Could be read directly as a csv/txt file. 
++ Alignment and read counts could be done within R environment to create read counts table. 
+1. Define working directory, load the required libraries. 
+2. Get read counts table. 
+Read the raw counts file processed by featureCounts. The fastq files were aligned with HiSat2, and the read counts were obtained using featureCounts of Rsubread packages.
+
+```{r Installation, eval=FALSE}
+pkgs <- c("DESeq2","org.Hs.eg.db","clusterProfiler","HDO.db",
+          "pheatmap","ggnewscale","PoiClaClu","enrichR","gtable","Rmisc")
+source("getReqdPkgs.r")
+getReqdPkgs(pkgs)
+```
+
+
+```{r Setup}
+suppressPackageStartupMessages(expr={
+    library(plyr)
+    library(dplyr)
+    library(ggplot2)
+    library(ggnewscale)
+    library(reshape2)
+    library(DESeq2)
+    library(ggrepel)
+    library(pheatmap)
+    library(org.Hs.eg.db)
+    library(clusterProfiler)
+    library("RColorBrewer")
+    library(enrichR)
+})
+
+SAVEFILES <- FALSE
+```
+
+```{r, echo=TRUE}
+library(biomaRt)
+d <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=",")
+
+#Rename columns
+cols <- c("ensembl_gene_id", "SC01_day0_rep1", "SC01_day0_rep2", "SC01_day0_rep3",
+          "SC01_day3_rep1", "SC01_day3_rep2", "SC01_day3_rep3",
+          "SC01_day8_rep1", "SC01_day8_rep2", "SC01_day8_rep3",
+          "SC07_day0_rep1", "SC07_day0_rep2", "SC07_day0_rep3",
+          "SC07_day3_rep1", "SC07_day3_rep2", "SC07_day3_rep3",
+          "SC07_day8_rep1", "SC07_day8_rep2", "SC07_day8_rep3",
+          "SC10_day0_rep1", "SC10_day0_rep2", "SC10_day0_rep3",
+          "SC10_day3_rep1", "SC10_day3_rep2", "SC10_day3_rep3",
+          "SC10_day8_rep1", "SC10_day8_rep2", "SC10_day8_rep3")
+names(d) <- cols
+ensembl <- useMart("ensembl")
+mart <- useDataset("hsapiens_gene_ensembl", mart = ensembl)
+genes <- d$ensembl_gene_id
+G_list <- getBM(attributes= c("ensembl_gene_id","hgnc_symbol"),
+                filters= "ensembl_gene_id",
+                values=genes,
+                mart=mart)
+
+GE_data <- merge(d, G_list, by = "ensembl_gene_id")
+d <- GE_data[, -1]
+d <- d[c(28, seq(1:27))]
+rownames(d) <- make.names(d$hgnc_symbol, unique = T)
+d <- d[, 2:28]
+
+# remove genes with <5 counts in all samples
+d <- d[apply(d, 1, function(x) all(x > 5)),]
+
+
+countdata <- d
+
+head(countdata)
+nrow(countdata)
+ncol(countdata)
+```
+
+### Identifying different ion channel gene lists
+```{r eval=FALSE, include=FALSE}
+countdata_histamine = countdata[c("HRH1","HRH2","HRH3","HRH4"),]
+countdata_IPs = countdata[c("ITPR1", "ITPR2", "ITPR3"),]
+countdata_IPrel = countdata[c("ITPR1", "ITPR2", "ITPR3", "PLCG1","DGKA", "DGKB", "DGKD", "DGKE", "DGKG", "DGKH", "DGKI", "DGKK", "DGKQ", "DGKZ", "PIK3CA", "PIK3CB", "PIK3CD", "PIK3CG", "PIK3C2A", "PIK3C2B", "PIK3C2G", "PIK3C3"),]
+countdata_musc = countdata[c("CHRM1", "CHRM2", "CHRM3", "CHRM4", "CHRM5"),]
+countdata_glut = countdata[c("GRM1", "GRM2", "GRM3", "GRM4", "GRM5",
+                             "GRM6", "GRM7", "GRM8", "GRIA1", 
+                             "GRIA2", "GRIA3", "GRIA4", "GRID1",
+                             "GRID2", "GRIK1", "GRIK2", "GRIK3", 
+                             "GRIK4", "GRIK5", "GRIN1", "GRIN2A",
+                             "GRIN2B", "GRIN2C", "GRIN2D", "GRIN3A",
+                             "GRIN3B"),]
+
+### Plot IP# data
+# source("summarySE.R")
+IPs_match = colsplit(colnames(countdata_IPs), pattern = "_", names = c("Population", "Time", "Replicate"))
+IPs_plot = cbind(IPs_match, t(countdata_IPs))
+IPs_melt = melt(data = IPs_plot, id.vars = c("Population", "Time", "Replicate"), measure.vars = c("ITPR1", "ITPR2", "ITPR3"))
+IPs_dat = RMisc::summarySE(IPs_melt, measurevar = "value", groupvars = c("Population", "Time", "variable"))
+IPs_dat$Time = as.numeric(gsub("[^[:digit:]]","",IPs_dat$Time))
+IPs_dat_sub = subset(IPs_dat, variable %in% c("ITPR2","ITPR3"))
+IPs_ggploted <- ggplot(IPs_dat_sub, aes(x=Time, y=value, group = interaction(variable, Population))) + geom_line(size=1.5, aes(color = Population, linetype = variable)) + geom_point(size = 1.5, aes(color = Population)) +
+geom_errorbar(aes(ymin=value-sd, ymax=value+sd, color = Population), width=.2, size=1.5) +
+theme_bw() + xlab("Time (days)") + ylab("Gene Counts") +
+ggtitle("IP3 gene receptors") +
+theme(legend.text = element_text(size = 10), legend.position = "right", 
+        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), axis.text=element_text(size=12),
+      legend.title = element_text(size=12,face="bold"),
+      axis.title=element_text(size=12,face="bold"))
+
+IPs_ggploted
+# ggsave("IP3R2_3_TimeSeriesRNAseq_clones.pdf", width = 6, height = 4)
+```
+
+###2. Convert counts table to DESeq2 object. 
+Convert counts table to object for DESeq2 or any other analysis pipeline. This step will require to prepare data object in a form that is suitable for analysis in DESeq2 pipeline: we will need the following to proceed:
+  
+  + countdata: a table with the read/fragment counts. 
++ coldata: a table with information about the samples. 
+
+Using the matrix of counts and the sample information table, we need to construct the DESeqDataSet object, for which we will use DESeqDataSetFromMatrix.....
+
+#### 1. Define the samples and treatment conditions. 
+```{r}
+condition <- c("0", "3", "8")
+treatment <- rep(condition, each=3) # Three biological replicates
+unique(treatment)
+cell <- c("SC01", "SC07","SC10") #sublines used for the analysis
+cellName <- rep(cell, each=3)
+
+coldata <- data.frame(cell=rep(cellName), treatment=rep(treatment, each=3))
+group = factor(paste(coldata$cell, coldata$treatment, sep="."))
+coldata$group = group
+```
+
+#### 2. construct the DESeqDataSet object from the matrix of counts and the sample information table. 
+Described above are: countdata- raw counts, coldata: sample information table. 
+```{r}
+dds <- DESeqDataSetFromMatrix(countData = countdata,
+                              colData = coldata,
+                              design = ~ cell + treatment + cell:treatment)
+dds
+nrow(dds); ncol(dds)
+```
+
+###3. Exploratory analysis and visualization.
+There are two separate steps in the workflow; the one which involves data transformations in order to visualize sample relationships and the second step involves statistical testing methods which requires the original raw counts. 
+
+#### 1. Pre-filtering and normalization. 
+Pre-filtering and normalization is required to remove lowly expressed genes. 
+
+```{r}
+dds2 <- dds[rowSums(counts(dds)) > 18, ] # remove rows with minimum of 2 read per condition
+
+nrow(dds2)
+# save(dds2, file = "DDS_SC-1,7,10_cell-treat-int.RData")
+# load("DDS_SC-1,7,10_cell-treat-int.RData")
+
+```
+
+#### 2. Visualize sample-to-sample distances. 
+We could use Principal Component Analysis (PCA) to visualize relationships between samples. 
+```{r}
+rld <- rlog(dds2, blind = FALSE)
+# save(rld, file = "RLD_SC-1,7,10_0,3,8d_20180701.RData")
+# load("RLD_SC-1,7,10_0,3,8d_20180701.RData")
+plotPCA(rld, intgroup = c("cell", "treatment"), ntop=5000)
+
+## Use prcomp function
+# Colored by cell line, shape by time point, lines connecting time
+pca_DEseq <- prcomp(t(assay(rld)))
+pca_DEseq_perc <- round(100*pca_DEseq$sdev^2/sum(pca_DEseq$sdev^2),1)
+pca_DEseq_df <- data.frame(PC1 = pca_DEseq$x[,1], 
+                           PC2 = pca_DEseq$x[,2], 
+                           sample = colnames(assay(rld)),
+                           cell.line = rep(c("SC01", "SC07", "SC10"), each = 9),
+                           day = rep(c("Day0", "Day3", "Day8"), each = 3),
+                           replicate = rep(c("Rep1", "Rep2", "Rep3"), times=9))
+
+pca_DEseq_means <- ddply(pca_DEseq_df, .(cell.line, day), summarise, meanPC1 = mean(PC1), meanPC2 = mean(PC2))
+
+ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line))+
+  geom_point(aes(shape = day), size=5) +
+  geom_path(data = pca_DEseq_means, 
+            aes(x=meanPC1, y=meanPC2,
+                color=cell.line), arrow = arrow(),
+            size = 2) +
+  labs(x=paste0("PC1 (",pca_DEseq_perc[1],"% variance)"), y=paste0("PC2 (",pca_DEseq_perc[2],"% variance)")) +
+  theme_bw() + ggtitle("PCA - Subclones in Time") +
+  theme(legend.text = element_text(size = 12), 
+        plot.title = element_text(size = 14, 
+                                  hjust = 0.5, 
+                                  face = "bold"), 
+        axis.text=element_text(size=12),
+        legend.title = element_text(size=12,face="bold"),
+        legend.position = "bottom",
+        axis.title=element_text(size=12, face="bold"))
+  
+
+
+```
+
+### 4. Differential Expression Analysis. 
+Always make sure to use the unnormalized raw counts for this. We will use DESeq function to perform differential analysis between samples; Unless specified, the analysis is between the last group and the first group. Different comparison can be done using 'contrast' argument. Steps involved underneath:
+  
+1. estimation of size factors (controls for differences in sequencing depth of the samples)
+2. estimation of dispersion values for each gene,
+3. fitting a generalized linear model
+
+#### 1. Running the differential expression pipeline. 
+```{r, cache=TRUE}
+design(dds2) = ~ cell + treatment + cell:treatment
+dds <- DESeq(dds2, test = "LRT", reduced = ~ cell + treatment)
+# save(dds, file = "DESeq_SC1,7,10_Timecourse_LRT.RData")
+# load("DESeq_SC1,7,10_Timecourse_LRT.RData")
+# dds
+```
+
+#### 2. Building the results table. 
+By default, results will extract the estimated log2 fold changes and p values for the last variable in the design formula. If there are more than 2 levels for this variable, results will extract the results table for a comparison of the last level over the first level. 
+```{r}
+# Esimate the differences between groups by: # a) Lowering the FDR (padj) or (b) raise the log2 fold change.
+
+resultsNames(dds)
+# alpha = FDR adjusted p value cutoff
+res <- results(dds, alpha = 0.001)
+summary(res)
+resOrdered <- res[order(res$pvalue),]
+rdata = as.data.frame(res)
+```
+### Differential expression: days 0 to 8
+Change significant log2 fold change to 1.585 (== 3-fold change in log2 space).
+```{r}
+res_0to8d <- results(dds, name="treatment_8_vs_0", cooksCutoff = 0.99, 
+                     independentFiltering = TRUE, alpha = 0.05, pAdjustMethod = "BH")
+summary(res_0to8d)
+# order results table by the smallest adjusted p value:
+res_0to8d <- res_0to8d[order(res_0to8d$padj),]
+results_0to8d <- as.data.frame(res_0to8d)
+
+results_0to8d <- mutate(results_0to8d, sig=ifelse(results_0to8d$padj<0.05 & results_0to8d$log2FoldChange > 1.585, "Upregulated", ifelse(results_0to8d$padj<0.05 & results_0to8d$log2FoldChange < -1.585, "Downregulated", "Not Significant")))
+
+row.names(results_0to8d) <- row.names(res_0to8d)
+
+
+head(results_0to8d)
+DEgenes_0to8d <- results_0to8d[which(abs(results_0to8d$log2FoldChange) > log2(1.5) & results_0to8d$padj < 0.05),]
+
+if(SAVEFILES) write.csv(DEgenes_0to8d, file="~/Desktop/DEgenes_0to8d.csv")
+```
+
+### Volcano plot
+```{r}
+volcano <- ggplot(results_0to8d, aes(log2FoldChange, -log10(pvalue))) +
+  geom_point(aes(col = sig)) + theme_bw() +
+  scale_color_manual(values = c("red", "grey", "green3")) +
+  # ggtitle("Volcano Plot of Untreated vs Idling") +
+  labs(x="log2(Fold Change)", y="Log(Odds Ratio)") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size = 12),
+        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=12),
+        legend.title = element_text(size=12), 
+        axis.title=element_text(size=12),
+        legend.position = "none")
+
+volcano
+# volcano + ggrepel::geom_text_repel(data=results_0to8d[1:10, ], 
+#                                    ggplot2::aes(label=rownames(results_0to8d[1:10, ])))
+# save(results_0to8d, file="untreatedIdling_DEA.RData")
+```
+
+
+```{r}
+DEgenes_0to8d <- DEgenes_0to8d[order(abs(DEgenes_0to8d$log2FoldChange),DEgenes_0to8d$sig, decreasing = TRUE),]
+temp <- DEgenes_0to8d[DEgenes_0to8d$baseMean > 300,]
+temp <- temp[abs(temp$log2FoldChange)>2,]
+if(SAVEFILES) write.csv(DEgenes_0to8d, file = "DEgenes_0to8d.csv")
+```
+
+
+# Generating Ion Channel Specific Gene Dataframes
+```{r}
+test <- assay(dds)
+types <- c("ATP", "TRP", "GABR", "CRACR", "SLC", "KCN", "CACN", "GRI", "ABC", "SCN", "TRP", "RIC3", "CHRND", "RYR")
+samples <- c("SC01_day0", "SC01_day3", "SC01_day8", "SC07_day0", "SC07_day3", "SC07_day8", "SC10_day0", "SC10_day3", "SC10_day8")
+test <- test[grep(paste(types, collapse="|"), rownames(test)),]
+test1 <- sapply(samples, function(x) rowMeans(test[, grep(x, colnames(test))]))
+rownames(test1) <- rownames(test)
+test1 <- test1[order(rownames(test1)),]
+test2 <- as.data.frame(test1)
+test2["l2FC_SC01_0to8"] <- log2(test2["SC01_day8"]/test2["SC01_day0"])
+test2["l2FC_SC07_0to8"] <- log2(test2["SC07_day8"]/test2["SC07_day0"])
+test2["l2FC_SC10_0to8"] <- log2(test2["SC10_day8"]/test2["SC10_day0"])
+test3 <- subset(test2, l2FC_SC01_0to8 > 1 & l2FC_SC07_0to8 > 1 & l2FC_SC10_0to8 > 1)
+test4 <- subset(test2, l2FC_SC01_0to8 > 1 | l2FC_SC07_0to8 > 1 | l2FC_SC10_0to8 > 1)
+# write.csv(x = test2, file = "all_ionChannel_Expression.csv")
+# write.csv(x = test3, file = "allUpreg_ionChannel_Expression.csv")
+# write.csv(x = test4, file = "atLeastOneUpreg_ionChannel_Expression.csv")
+test5 <- log2(test4[, 1:9]+1)
+pheatmap(test5, cluster_cols = F, cluster_rows = F)
+test6 <- log2((test3[,1:9])+1)
+pheatmap(test6, cluster_rows = F, cluster_cols = F)
+test7 <- test5[rowSums(test5)>30,]
+pheatmap(test7, cluster_rows = F, cluster_cols = F)
+```
+
+```{r}
+# load(file="untreatedIdling_DEA.RData")
+
+OrgDB <- org.Hs.eg.db
+upreg_genes <- subset(results_0to8d, padj<0.05 & log2FoldChange>2)
+downreg_genes <-subset(results_0to8d, padj<0.05 & log2FoldChange<(-2))
+
+geneList_up <- as.vector(upreg_genes$log2FoldChange)
+names(geneList_up) <- rownames(upreg_genes)
+geneList_down <- as.vector(downreg_genes$log2FoldChange)
+names(geneList_down) <- rownames(downreg_genes)
+
+genes_up <- as.vector(rownames(upreg_genes))
+genes_down <- as.vector(rownames(downreg_genes))
+# names(geneList) <- rownames(results_0to8d)
+genes_up_ENTREZID <- bitr(genes_up, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = OrgDB)$ENTREZID
+genes_down_ENTREZID <- bitr(genes_down, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = OrgDB)$ENTREZID
+
+# Group GO
+ggo_up <- clusterProfiler::groupGO(gene     = genes_up_ENTREZID,
+                                OrgDb    = OrgDB,
+                                ont      = "BP",
+                                level    = 3,
+                                readable = TRUE)
+ggo_up_df <- as.data.frame(ggo_up)
+ggo_up_df <- ggo_up_df[order(-ggo_up_df$Count),] 
+
+ggo_down <- clusterProfiler::groupGO(gene = genes_down_ENTREZID,
+                                OrgDb    = OrgDB,
+                                ont      = "BP",
+                                level    = 3,
+                                readable = TRUE)
+# View(as.data.frame(ggo_down))
+
+# GO over-representation test
+ego_genesUp <- clusterProfiler::enrichGO(gene  = genes_up_ENTREZID,
+                                 OrgDb         = OrgDB,
+                                 ont           = "BP",
+                                 pAdjustMethod = "BH",
+                                 pvalueCutoff  = 0.05,
+                                 qvalueCutoff  = 0.05, 
+                                 readable      = TRUE)
+
+# View(as.data.frame(ego_genesUp))
+
+ego_genesDown <- clusterProfiler::enrichGO(gene  = genes_down_ENTREZID,
+                                 OrgDb         = OrgDB,
+                                 ont           = "BP",
+                                 pAdjustMethod = "BH",
+                                 pvalueCutoff  = 0.05,
+                                 qvalueCutoff  = 0.05, 
+                                 readable      = TRUE)
+
+# View(as.data.frame(ego_genesDown))
+
+# kk_genesUp <- enrichKEGG(gene = genes_up_ENTREZID,
+#                    organism = 'hsa',
+#                   pvalueCutoff = 0.05)
+# View(as.data.frame(kk_genesUp))
+# 
+# kk_genesDown <- enrichKEGG(gene = genes_down_ENTREZID,
+#                    organism = 'hsa',
+#                   pvalueCutoff = 0.05)
+# View(as.data.frame(kk_genesDown))
+
+# ego_GSEA_up <- gseGO(geneList = geneList_up,
+#               OrgDb        = OrgDB,
+#               ont          = "BP",
+#               nPerm        = 1000,
+#               minGSSize    = 100,
+#               maxGSSize    = 500,
+#               pvalueCutoff = 0.05,
+#               verbose      = FALSE)
+
+# barplot(ggo_up, order=T)
+# barplot(ggo_down)
+dotplot(ego_genesUp) + ggtitle("GO Over-representation Upregulated Genes") +
+  labs(x="Gene Ratio", y="GO Terms") +
+  theme(legend.text = element_text(size = 12),
+        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=12),
+        legend.title = element_text(size=12,face="bold"), 
+        axis.title=element_text(size=12, face="bold"))
+
+dotplot(ego_genesDown) + ggtitle("GO Over-representation Downregulated Genes") +
+  labs(x="Gene Ratio", y="GO Terms") +
+  theme(legend.text = element_text(size = 12),
+        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=12),
+        legend.title = element_text(size=12,face="bold"), 
+        axis.title=element_text(size=12, face="bold"))
+
+# emapplot(ego_genesUp)
+# emapplot(ego_genesDown)
+cnetplot(ego_genesUp, categorySize="pvalue", foldChange=geneList_up)
+cnetplot(ego_genesDown, categorySize="pvalue", foldChange=geneList_down)
+
+
+ego_genesUp_df <- as.data.frame(ego_genesUp) 
+egoUp <- ego_genesUp_df[order(-ego_genesUp_df$Count),]
+# sorted_egoUp_top10 <- head(egoUp, 10)
+egoUp_genes <- strsplit(egoUp$geneID, "/", fixed=TRUE)
+# egoUp_top10_genes_all <- unlist(strsplit(head(egoUp, 10)$geneID, "[/]"))
+# egoUp_top10_genes_group <- strsplit(sorted_egoUp_top10$geneID, "[/]")
+# egoUp_top10_genes_unique <- unique(egoUp_top10_genes)
+# table(egoUp_top10_genes)
+# egoUp_genesByGroup <- as.data.frame(t(plyr::ldply(egoUp_top10_genes_group, rbind)))
+# colnames(egoUp_genesByGroup) <- sorted_egoUp_top10$Description
+# egoUp_genesByGroup_ionOnly <- egoUp_genesByGroup[,c(1:6,8:10)]
+
+# write.csv(egoUp_genesByGroup, file="top10GOtermsUpregulated_geneMembership.csv")
+# ionGenes <- unique(unlist(egoUp_genesByGroup_ionOnly))
+# 
+# ensembl = useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl")
+# IDs <- as.character(ionGenes)
+# geneUpID <- names(geneList_up)
+# geneDownID <- names(geneList_down)
+# genedesc_ion <- getBM(attributes=c('external_gene_name','description'), filters = 'external_gene_name', values = IDs, mart =ensembl)
+# write.csv(genedesc_ion, file = "ionChannelGenes_description.csv")
+
+# genedesc_Up <- getBM(attributes=c('external_gene_name','description'), filters = 'external_gene_name', values = geneUpID, mart =ensembl)
+# write.csv(genedesc_Up, file = "upregulatedGenes_description.csv")
+# genedesc_Down <- getBM(attributes=c('external_gene_name','description'), filters = 'external_gene_name', values = geneDownID, mart =ensembl)
+# write.csv(genedesc_Down, file = "downrgulatedGenes_description.csv")
+```
+
+
+```{r}
+geneList_all <- as.vector(results_0to8d$log2FoldChange)
+names(geneList_all) <- rownames(results_0to8d)
+a <- names(geneList_all)
+genes_ENTREZID <- bitr(a, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = OrgDB)$ENTREZID
+names(geneList_all) <- genes_ENTREZID
+
+gene_df <- data.frame(Entrez=names(geneList_all), HGNC=a, FC=geneList_all)
+gene_df <- gene_df[abs(gene_df$FC) > 1,]
+gene_df$group <- "upregulated"
+gene_df$group[gene_df$FC < 0] <- "downregulated"
+gene_df$othergroup <- "A"
+gene_df$othergroup[abs(gene_df$FC) > 2] <- "B"
+
+formula_res <- compareCluster(Entrez~group+othergroup, data=gene_df, fun="enrichKEGG")
+head(as.data.frame(formula_res))
+
+```
+#### 3. Exploring Results
+
+```{r}
+plotMA(res, ylim=c(-2,2))
+plotCounts(dds, gene=which.min(res$padj), intgroup="treatment")
+
+```
+
+#### Log normalize results ####
+```{r}
+
+# normalizedCounts <- t( t(counts(dds)) / sizeFactors(dds) )
+
+#log2 normalized counts
+rld2 <- rlog(dds, blind = FALSE)
+# save(rld2, file = "RLD2_SC1,7,10_Timecourse_hmap.RData")
+
+# load("RLD2_SC1,7,10_Timecourse_hmap.RData")
+```
+
+#### Clustering ###
+
+```{r}
+sampleDists <- dist(t(assay(rld2)))
+sampleDists
+
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- paste(rld2$treatment, rld2$cell, sep = " - " )
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         col = colors)
+
+
+poisd <- PoiClaClu::PoissonDistance(t(counts(dds)))
+samplePoisDistMatrix <- as.matrix( poisd$dd )
+rownames(samplePoisDistMatrix) <- paste( dds$dex, dds$cell, sep=" - " )
+colnames(samplePoisDistMatrix) <- NULL
+pheatmap(samplePoisDistMatrix,
+         clustering_distance_rows = poisd$dd,
+         clustering_distance_cols = poisd$dd,
+         col = colors)
+
+mds <- as.data.frame(colData(rld2))  %>%
+         cbind(cmdscale(sampleDistMatrix))
+ggplot(mds, aes(x = `1`, y = `2`, color = cell, shape = treatment)) +
+  geom_point(size = 3) + coord_fixed() + theme_bw() +
+  xlab("PC1") + ylab("PC2") +
+  theme(legend.text = element_text(size = 10), 
+        plot.title = element_text(size = 14, 
+                                  hjust = 0.5, 
+                                  face = "bold"), 
+        axis.text=element_text(size=12),
+        legend.title = element_text(size=12,face="bold"),
+        # legend.position = "bottom",
+        axis.title=element_text(size=12))
+
+# library("genefilter")
+topVarGenes <- head(order(rowVars(assay(rld2)), decreasing = TRUE), 5000)
+mat  <- assay(rld2)[ topVarGenes, ]
+mat  <- mat - rowMeans(mat)
+anno <- as.data.frame(colData(rld2)[, c("cell","treatment")])
+names(anno) <- c("Cell", "Treatment")
+annotation_colors = list(
+  Cell = c(SC01="red2", SC07="green2", SC10="blue2"),
+  Treatment = c("0"="cyan2", "3"="darkorange", "8"="darkorchid"))
+pheatmap(mat, annotation_col = anno, show_rownames = F, show_colnames = F,
+         annotation_colors = annotation_colors)
+```
+
+#### Time series analysis ####
+
+# 1 DESeq2 time series analysis
+```{r}
+# browseVignettes("rnaseqGene")
+
+ddsTC <- DESeq(dds, test="LRT", reduced = ~ cell + treatment)
+resTC <- results(ddsTC)
+resTC$symbol <- mcols(ddsTC)$symbol
+# head(resTC[order(resTC$padj),], 4)
+
+tc <- plotCounts(ddsTC, which.min(resTC$padj), 
+                   intgroup = c("treatment","cell"), returnData = TRUE)
+
+ddsTC[which.min(resTC$padj),]
+
+ggplot(tc,
+  aes(x = rep(c(0,3,8), each=9), y = count, color = cell, group = cell)) + 
+  geom_point() + geom_smooth(se = FALSE, method = "loess") + scale_y_log10() +
+  theme_bw() +
+  ggtitle("Time Course Expression of PDK4") +
+  labs(x="Time (days)", y="Gene Count") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size = 12),
+        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=12),
+        legend.title = element_text(size=12,face="bold"), 
+        axis.title=element_text(size=12, face="bold"),
+        legend.position = "bottom")
+
+resultsNames(ddsTC)
+
+betas <- coef(ddsTC)
+colnames(betas)
+
+topGenes <- head(order(resTC$padj),50)
+mat <- betas[topGenes, -c(1,2)]
+thr <- 3 
+mat[mat < -thr] <- -thr
+mat[mat > thr] <- thr
+pheatmap(mat, breaks=seq(from=-thr, to=thr, length=101),
+         cluster_col=FALSE)
+```
+
+
+### NOTE
+Original code below produced many messages of `No id variables; using all as measure variables`; presumably a line for each gene. This is due to the `melt` function not having any id variables to use.  
+
+
+Rejiggering code not yet finished.  Should probably use 
+```{r Subline ANOVA, message=FALSE, warning=FALSE, eval=FALSE, include=FALSE}
+# 1.1 ANOVA - compare btwn sublines 
+# group <- as.factor(c(1,1,1,2,2,2,3,3,3))
+# Getting anova values for each gene in dataset
+anova_baseline <- list()
+TukeySC07toSC01 <- list()
+TukeySC10toSC01 <- list()
+TukeySC10toSC07 <- list()
+norm_data <- as.data.frame(assay(rld2))[c('SC01_day0_rep1',
+                                        'SC01_day0_rep2',
+                                        'SC01_day0_rep3',
+                                        'SC07_day0_rep1',
+                                        'SC07_day0_rep2',
+                                        'SC07_day0_rep3',
+                                        'SC10_day0_rep1',
+                                        'SC10_day0_rep2',
+                                        'SC10_day0_rep3')]
+
+
+######################
+### New code by DRT ###
+######################
+# samp_names <- colnames(norm_data)
+
+# compareSubclones <- function(gene_name, dat=norm_data, samp_names=NULL, group=NULL)
+# {
+#     if(is.null(group)) group <- as.factor(c(1,1,1,2,2,2,3,3,3))
+#     if(is.null(samp_names)) samp_names <- colnames(dat)
+#     # dfa = data for analysis
+#     dfa <- data.frame(value=as.numeric(t(dat[gene_name,])), group=group)
+#     rownames(dfa) <- samp_names
+#     fit <- aov(value~group, dfa)
+#     anova_baseline <- summary(fit)[[1]][['Pr(>F)']][1]
+#     results <- TukeyHSD(fit, conf.level = 0.95)
+#     pval <- data.frame(p_adj=results$group[,'p adj'])
+#     rownames(pval) <- c("TukeySC07toSC01","TukeySC10toSC01","TukeySC10toSC07")
+#     out <- list(anova_baseline = anova_baseline,
+#                 pval = pval)
+#     # TukeySC07toSC01[gene] <- results$group[,'p adj'][1]
+#     # TukeySC10toSC01[gene] <- results$group[,'p adj'][2]
+#     # TukeySC10toSC07[gene] <- results$group[,'p adj'][3]    
+#     return(out)
+# }
+
+# temp <- lapply(rownames(norm_data), compareSubclones)
+# anova_pval <- sapply(temp, "[[", 1)
+######################
+### End new code ###
+######################
+
+for (gene in 1:nrow(norm_data)) {
+  gene_norm_data <- norm_data[gene,]
+  # d3 <- data.frame(y = gene_norm_data, group = group)
+  # fit <- lm(y~group, d3)
+  gene_norm_data_melt <- data.frame(variable=colnames(gene_norm_data),
+                                    value=as.numeric(t(gene_norm_data)))
+  gene_norm_data_melt$group <- group
+  fit <- aov(value~group, gene_norm_data_melt)
+  # anova_list[gene] <- anova(fit)$'Pr(>F)'[1]
+  anova_baseline[gene] <- summary(fit)[[1]][['Pr(>F)']][1]
+  results <- TukeyHSD(fit, conf.level = 0.95)
+  TukeySC07toSC01[gene] <- results$group[,'p adj'][1]
+  TukeySC10toSC01[gene] <- results$group[,'p adj'][2]
+  TukeySC10toSC07[gene] <- results$group[,'p adj'][3]
+}
+# print(anova_list)
+
+  
+anova_pval <- unlist(anova_baseline) # make array
+TukeySC07toSC01_pval <- unlist(TukeySC07toSC01)
+TukeySC10toSC01_pval <- unlist(TukeySC10toSC01)
+TukeySC10toSC07_pval <- unlist(TukeySC10toSC07)
+
+# Make master dataset with statistics
+norm_data_stats <- as.data.frame(norm_data)
+norm_data_stats <- cbind(norm_data_stats, anova_pval)
+norm_data_stats <- cbind(norm_data_stats, TukeySC07toSC01_pval)
+norm_data_stats <- cbind(norm_data_stats, TukeySC10toSC01_pval)
+norm_data_stats <- cbind(norm_data_stats, TukeySC10toSC07_pval)
+
+# save(norm_data_stats, file = "subcloneCounts_anova_tukey_DESeq2.RData")
+
+# Identify genes that differ between clones based on 
+# ANOVA p-value with defined threshold
+sigThresh <- 0.05
+table(anova_pval < sigThresh)
+table(TukeySC07toSC01_pval < sigThresh)
+table(TukeySC10toSC01_pval < sigThresh)
+table(TukeySC10toSC07_pval < sigThresh)
+
+sigIndecies <- which(norm_data_stats["anova_pval"] < sigThresh)
+
+sigIndeciesAll <- which(norm_data_stats["anova_pval"] < sigThresh & 
+                          norm_data_stats["TukeySC07toSC01_pval"] < sigThresh &
+                          norm_data_stats["TukeySC10toSC01_pval"] < sigThresh &
+                          norm_data_stats["TukeySC10toSC07_pval"] < sigThresh)
+
+sigDiffGenes <- rownames(norm_data_stats[sigIndecies,])
+sigDiffGenesAll <- rownames(norm_data_stats[sigIndeciesAll,])
+```
+
+# 2. ANOVA btwn time points & shared btwn sublines)
+```{r SC01 time ANOVA, message=FALSE, warning=FALSE, eval=FALSE}
+group<-as.factor(c(1,1,1,2,2,2,3,3,3))
+# Getting anova values for each gene in dataset
+anova_SC01 <- list()
+TukeySC01_time0 <- list()
+TukeySC01_time3 <- list()
+TukeySC01_time8 <- list()
+norm_data_SC01time <- as.data.frame(assay(rld2))[c('SC01_day0_rep1',
+                                        'SC01_day0_rep2',
+                                        'SC01_day0_rep3',
+                                        'SC01_day3_rep1',
+                                        'SC01_day3_rep2',
+                                        'SC01_day3_rep3',
+                                        'SC01_day8_rep1',
+                                        'SC01_day8_rep2',
+                                        'SC01_day8_rep3')]
+for (gene in 1:nrow(norm_data_SC01time)) {
+  gene_norm_data <- norm_data_SC01time[gene,]
+  # d3 <- data.frame(y = gene_norm_data, group = group)
+  # fit <- lm(y~group, d3)
+  # gene_norm_data_melt <- melt(gene_norm_data)
+  gene_norm_data_melt <- data.frame(variable=colnames(gene_norm_data),
+                                    value=as.numeric(t(gene_norm_data)))
+
+  gene_norm_data_melt$group <- group
+  fit <- aov(value~group, gene_norm_data_melt)
+  # anova_list[gene] <- anova(fit)$'Pr(>F)'[1]
+  anova_SC01[gene] <- summary(fit)[[1]][['Pr(>F)']][1]
+  results <- TukeyHSD(fit, conf.level = 0.95)
+  TukeySC01_time0[gene] <- results$group[,'p adj'][1]
+  TukeySC01_time3[gene] <- results$group[,'p adj'][2]
+  TukeySC01_time8[gene] <- results$group[,'p adj'][3]
+  
+}
+# print(anova_list)
+anova_SC01_pval <- unlist(anova_SC01) # make array
+TukeySC01_time0_pval <- unlist(TukeySC01_time0)
+TukeySC01_time3_pval <- unlist(TukeySC01_time3)
+TukeySC01_time8_pval <- unlist(TukeySC01_time8)
+
+# Make master dataset with statistics
+norm_data_stats_SC01 <- as.data.frame(norm_data_SC01time)
+norm_data_stats_SC01 <- cbind(norm_data_stats_SC01, anova_SC01_pval)
+norm_data_stats_SC01 <- cbind(norm_data_stats_SC01, TukeySC01_time0_pval)
+norm_data_stats_SC01 <- cbind(norm_data_stats_SC01, TukeySC01_time3_pval)
+norm_data_stats_SC01 <- cbind(norm_data_stats_SC01, TukeySC01_time8_pval)
+
+# save(norm_data_stats_SC01, file = "subcloneCounts_anova_tukey_DESeq2_SC01time.RData")
+
+# Identify genes that differ between clones based on 
+# ANOVA p-value with defined threshold
+sigThresh <- 0.05
+table(anova_SC01_pval < sigThresh)
+table(TukeySC01_time0_pval < sigThresh)
+table(TukeySC01_time3_pval < sigThresh)
+table(TukeySC01_time8_pval < sigThresh)
+
+sigIndecies_SC01 <- which(norm_data_stats_SC01["anova_SC01_pval"] < sigThresh)
+
+sigIndeciesAll_SC01 <- which(norm_data_stats_SC01["anova_SC01_pval"] < sigThresh & 
+                          norm_data_stats_SC01["TukeySC01_time0_pval"] < sigThresh &
+                          norm_data_stats_SC01["TukeySC01_time3_pval"] < sigThresh &
+                          norm_data_stats_SC01["TukeySC01_time8_pval"] < sigThresh)
+
+sigDiffGenes_SC01 <- rownames(norm_data_stats_SC01[sigIndecies_SC01,])
+sigDiffGenesAll_SC01 <- rownames(norm_data_stats_SC01[sigIndeciesAll_SC01,])
+```
+
+
+```{r SC07 time, message=FALSE, warning=FALSE, eval=FALSE}
+group<-as.factor(c(1,1,1,2,2,2,3,3,3))
+# Getting anova values for each gene in dataset
+anova_SC07 <- list()
+TukeySC07_time0 <- list()
+TukeySC07_time3 <- list()
+TukeySC07_time8 <- list()
+norm_data_SC07time <- as.data.frame(assay(rld2))[c('SC07_day0_rep1',
+                                        'SC07_day0_rep2',
+                                        'SC07_day0_rep3',
+                                        'SC07_day3_rep1',
+                                        'SC07_day3_rep2',
+                                        'SC07_day3_rep3',
+                                        'SC07_day8_rep1',
+                                        'SC07_day8_rep2',
+                                        'SC07_day8_rep3')]
+for (gene in 1:nrow(norm_data_SC07time)) {
+  gene_norm_data <- norm_data_SC07time[gene,]
+  # d3 <- data.frame(y = gene_norm_data, group = group)
+  # fit <- lm(y~group, d3)
+  # gene_norm_data_melt <- melt(gene_norm_data)
+  gene_norm_data_melt <- data.frame(variable=colnames(gene_norm_data),
+                                    value=as.numeric(t(gene_norm_data)))
+  gene_norm_data_melt$group <- group
+  fit <- aov(value~group, gene_norm_data_melt)
+  # anova_list[gene] <- anova(fit)$'Pr(>F)'[1]
+  anova_SC07[gene] <- summary(fit)[[1]][['Pr(>F)']][1]
+  results <- TukeyHSD(fit, conf.level = 0.95)
+  TukeySC07_time0[gene] <- results$group[,'p adj'][1]
+  TukeySC07_time3[gene] <- results$group[,'p adj'][2]
+  TukeySC07_time8[gene] <- results$group[,'p adj'][3]
+  
+}
+# print(anova_list)
+anova_SC07_pval <- unlist(anova_SC07) # make array
+TukeySC07_time0_pval <- unlist(TukeySC07_time0)
+TukeySC07_time3_pval <- unlist(TukeySC07_time3)
+TukeySC07_time8_pval <- unlist(TukeySC07_time8)
+
+# Make master dataset with statistics
+norm_data_stats_SC07 <- as.data.frame(norm_data_SC07time)
+norm_data_stats_SC07 <- cbind(norm_data_stats_SC07, anova_SC07_pval)
+norm_data_stats_SC07 <- cbind(norm_data_stats_SC07, TukeySC07_time0_pval)
+norm_data_stats_SC07 <- cbind(norm_data_stats_SC07, TukeySC07_time3_pval)
+norm_data_stats_SC07 <- cbind(norm_data_stats_SC07, TukeySC07_time8_pval)
+
+# save(norm_data_stats_SC07, file = "subcloneCounts_anova_tukey_DESeq2_SC07time.RData")
+
+# Identify genes that differ between clones based on 
+# ANOVA p-value with defined threshold
+sigThresh <- 0.05
+table(anova_SC07_pval < sigThresh)
+table(TukeySC07_time0_pval < sigThresh)
+table(TukeySC07_time3_pval < sigThresh)
+table(TukeySC07_time8_pval < sigThresh)
+
+sigIndecies_SC07 <- which(norm_data_stats_SC07["anova_SC07_pval"] < sigThresh)
+
+sigIndeciesAll_SC07 <- which(norm_data_stats_SC07["anova_SC07_pval"] < sigThresh & 
+                          norm_data_stats_SC07["TukeySC07_time0_pval"] < sigThresh &
+                          norm_data_stats_SC07["TukeySC07_time3_pval"] < sigThresh &
+                          norm_data_stats_SC07["TukeySC07_time8_pval"] < sigThresh)
+
+sigDiffGenes_SC07 <- rownames(norm_data_stats_SC07[sigIndecies_SC07,])
+sigDiffGenesAll_SC07 <- rownames(norm_data_stats_SC07[sigIndeciesAll_SC07,])
+```
+
+```{r SC10 time, message=FALSE, warning=FALSE}
+group<-as.factor(c(1,1,1,2,2,2,3,3,3))
+# Getting anova values for each gene in dataset
+anova_SC10 <- list()
+TukeySC10_time0 <- list()
+TukeySC10_time3 <- list()
+TukeySC10_time8 <- list()
+norm_data_SC10time <- as.data.frame(assay(rld2))[c('SC10_day0_rep1',
+                                        'SC10_day0_rep2',
+                                        'SC10_day0_rep3',
+                                        'SC10_day3_rep1',
+                                        'SC10_day3_rep2',
+                                        'SC10_day3_rep3',
+                                        'SC10_day8_rep1',
+                                        'SC10_day8_rep2',
+                                        'SC10_day8_rep3')]
+for (gene in 1:nrow(norm_data_SC10time)) {
+  gene_norm_data <- norm_data_SC10time[gene,]
+  # d3 <- data.frame(y = gene_norm_data, group = group)
+  # fit <- lm(y~group, d3)
+  gene_norm_data_melt <- data.frame(variable=colnames(gene_norm_data),
+                                    value=as.numeric(t(gene_norm_data)))
+  gene_norm_data_melt$group <- group
+  fit <- aov(value~group, gene_norm_data_melt)
+  # anova_list[gene] <- anova(fit)$'Pr(>F)'[1]
+  anova_SC10[gene] <- summary(fit)[[1]][['Pr(>F)']][1]
+  results <- TukeyHSD(fit, conf.level = 0.95)
+  TukeySC10_time0[gene] <- results$group[,'p adj'][1]
+  TukeySC10_time3[gene] <- results$group[,'p adj'][2]
+  TukeySC10_time8[gene] <- results$group[,'p adj'][3]
+  
+}
+# print(anova_list)
+anova_SC10_pval <- unlist(anova_SC10) # make array
+TukeySC10_time0_pval <- unlist(TukeySC10_time0)
+TukeySC10_time3_pval <- unlist(TukeySC10_time3)
+TukeySC10_time8_pval <- unlist(TukeySC10_time8)
+
+# Make master dataset with statistics
+norm_data_stats_SC10 <- as.data.frame(norm_data_SC10time)
+norm_data_stats_SC10 <- cbind(norm_data_stats_SC10, anova_SC10_pval)
+norm_data_stats_SC10 <- cbind(norm_data_stats_SC10, TukeySC10_time0_pval)
+norm_data_stats_SC10 <- cbind(norm_data_stats_SC10, TukeySC10_time3_pval)
+norm_data_stats_SC10 <- cbind(norm_data_stats_SC10, TukeySC10_time8_pval)
+
+# save(norm_data_stats_SC10, file = "subcloneCounts_anova_tukey_DESeq2_SC10time.RData")
+
+# Identify genes that differ between clones based on 
+# ANOVA p-value with defined threshold
+sigThresh <- 0.05
+table(anova_SC10_pval < sigThresh)
+table(TukeySC10_time0_pval < sigThresh)
+table(TukeySC10_time3_pval < sigThresh)
+table(TukeySC10_time8_pval < sigThresh)
+
+sigIndecies_SC10 <- which(norm_data_stats_SC10["anova_SC10_pval"] < sigThresh)
+
+sigIndeciesAll_SC10 <- which(norm_data_stats_SC10["anova_SC10_pval"] < sigThresh & 
+                          norm_data_stats_SC10["TukeySC10_time0_pval"] < sigThresh &
+                          norm_data_stats_SC10["TukeySC10_time3_pval"] < sigThresh &
+                          norm_data_stats_SC10["TukeySC10_time8_pval"] < sigThresh)
+
+sigDiffGenes_SC10 <- rownames(norm_data_stats_SC10[sigIndecies_SC10,])
+sigDiffGenesAll_SC10 <- rownames(norm_data_stats_SC10[sigIndeciesAll_SC10,])
+```
+
+```{r eval=FALSE, include=FALSE}
+
+all_SCs_time <- Reduce(intersect, 
+                       list(sigDiffGenesAll_SC01,
+                            sigDiffGenesAll_SC07,
+                            sigDiffGenesAll_SC10))
+
+df_allSCs_time <- data.frame(gene = all_SCs_time)
+# genes <- df_allSCs_time$gene
+# G_list <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id","hgnc_symbol"),values=genes,mart=mart)
+merge(df_allSCs_time,G_list,by.x="gene",by.y="ensembl_gene_id")
+
+# write.csv(G_list, file = "ANOVA_allSCsTime_shared_genes.csv")
+
+# Compare gene lists for between sublines and time
+# install_github("wjawaid/enrichR")
+dbs <- listEnrichrDbs()
+dbs <- c("KEGG_2016", 
+         "GO_Molecular_Function_2018")
+
+enriched_allSCstime <- enrichr(G_list$hgnc_symbol, dbs)
+
+KEGG_upreg_allSCstime_top5 <- enriched_allSCstime[["KEGG_2016"]][1:5,]
+KEGG_upreg_allSCstime_top5$Terms <- factor(KEGG_upreg_allSCstime_top5$Term,
+                                           levels=KEGG_upreg_allSCstime_top5$Term)
+
+ggplot(KEGG_upreg_allSCstime_top5, 
+       aes(x=Terms, y=-log10(Adjusted.P.value))) +
+  geom_bar(stat='identity') +
+  coord_flip() +
+  labs(x = "Pathway Term", y = "-log10(q-value)")  +
+  theme_bw()  + ggtitle("Pathway Enrichment - KEGG 2016") +
+  theme(plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=12), 
+        axis.title=element_text(size=14,face="bold"))
+  
+
+```
+
+# 3 Jack's method 
+```{r eval=FALSE}
+#Grab all the names from res in the DESeq matrix
+topGenes <- which(res$padj <= 0.001)
+
+countMAT <- data.frame(normalizedCounts[topGenes,])
+
+subrl = data.frame(assay(rld2))
+rlMAT = data.frame(subrl[topGenes,])
+
+#Labeling rows with ENSG IDs
+# countMAT$ensembl_gene_id = row.names(countMAT)
+# countMAT$padj = res[topGenes,"padj"]
+
+rlMAT$ensembl_gene_id = row.names(rlMAT)
+rlMAT$padj = res[topGenes,"padj"]
+
+# library(biomaRt)
+# ensembl <- useMart("ensembl")
+# mart <- useDataset("hsapiens_gene_ensembl", mart = ensembl)
+# genes = row.names(rlMAT)
+# G_list <- getBM(attributes= c("ensembl_gene_id","hgnc_symbol"),
+#                 filters= "ensembl_gene_id",
+#                 values=genes,
+#                 mart=mart)
+
+#Check if data fits a normal distribution
+# plot(density(c(as.matrix(countMAT[,1:27]))))
+plot(density(c(as.matrix(rlMAT[,1:27]))))
+
+
+#rlMAT follows a normal distribution, therefore we will use this in the heatmap construction
+#Labeling df with hgnc symbols
+GE_data <- merge(G_list, rlMAT, by = "ensembl_gene_id")
+
+#Making rownames unique hgnc symbols
+rownames(GE_data) <- make.names(GE_data[,"hgnc_symbol"], unique = TRUE)
+GE_data = GE_data[order(GE_data$padj),]
+
+
+#Averaging rld between trials
+Acol <- c("SC01_day0",
+          "SC01_day3",
+          "SC01_day8",
+          "SC07_day0",
+          "SC07_day3",
+          "SC07_day8",
+          "SC10_day0",
+          "SC10_day3",
+          "SC10_day8")
+for(i in 1:length(Acol)){
+  j = 2+i
+  k = 2+3*i
+  GE_data[,Acol[i]] = rowMeans(GE_data[,c(j:k)])
+}
+
+
+#Calculating fold changes across conditions in a triangular matrix form
+GE_mean = GE_data[,c(1,2,30:39)]
+DEProc = GE_mean
+startcol = 4
+endcol = 12
+
+allFC <- function(DEProc,startcol,endcol){ 
+  GE_fold = DEProc[,-c(startcol:endcol)]
+  colvec = colnames(DEProc)[startcol:endcol]
+  
+  #Last index is a self comparison and is removed
+  for(k in 1:(length(colvec)-1)){
+    #Start with column that is 1 away from index 
+    for(j in (k+1):length(colvec)){
+      compnam = paste0(colvec[j],"/",colvec[k])
+      #Loop through each gene/row  
+      for(i in 1:nrow(DEProc)){
+        f = DEProc[i,colvec[j]]
+        h = DEProc[i,colvec[k]]
+        
+        #Capture upregulation and down regulation
+        if(f>h){
+          GE_fold[i,compnam] = 2^(f-h)
+        }else{
+          GE_fold[i,compnam] = -2^(h-f)
+        }
+        
+      }
+    }
+  }
+  
+  return(GE_fold)
+  
+}
+
+#Subset gene, then plot, then save plot
+#Perhaps make heatmaps with scaled z scores
+#Is there a way to consolidate replicate z scores? Geometric mean? 
+#Regular mean, then scale.
+
+# ImpRat = colnames(GE_fold)[c(4,5,6,9,12,14,17,21,24,25,26,27,30,32,36,37,38,39)]
+
+#Listing of all important comparisons?
+ImpRat = c("SC01_day3/SC01_day0", "SC01_day8/SC01_day3", "SC01_day8/SC01_day0", 
+           "SC07_day3/SC07_day0", "SC07_day8/SC07_day3", "SC07_day8/SC07_day0", 
+           "SC10_day3/SC10_day0", "SC10_day8/SC10_day3", "SC10_day8/SC10_day0", 
+           "SC07_day0/SC01_day0", "SC10_day0/SC01_day0", "SC10_day0/SC07_day0",
+           "SC07_day3/SC01_day3", "SC10_day3/SC01_day3", "SC10_day3/SC07_day3",
+           "SC07_day8/SC01_day8", "SC10_day8/SC01_day8", "SC10_day8/SC07_day8" )
+Imp_fold = GE_fold[,c("ensembl_gene_id", "hgnc_symbol", "padj", ImpRat)]
+Imp_fold2 = Imp_fold[rowSums(abs(Imp_fold[,4:21])>=1.5)>=1,]
+
+# write.table(Imp_fold,"SC1,7,10-TimecoursePLX-ImportantFC_20180722.txt", sep="\t", row.names=F)
+
+Imp_fold = read.delim("SC1,7,10-TimecoursePLX-ImportantFC_20180722.txt", sep="\t")
+
+#Subset the LF mean of important genes from Log2 Fold Change (LFC) comparison data frame.
+GE_Imp = subset(GE_mean,GE_mean$ensembl_gene_id%in%Imp_fold2$ensembl_gene_id)
+
+Necro = read.delim("KEGGNecroptosis_hsa04217_06-25-18.txt", header=T, stringsAsFactors = F)
+Necro = Necro[rowSums(is.na(Necro)) == 0, ]
+DE_Necro = merge(GE_Imp, Necro, by.x = "hgnc_symbol", by.y = "GeneName")
+row.names(DE_Necro) = make.names(DE_Necro[,"hgnc_symbol"], unique = TRUE)
+pheatmap(DE_Necro[3:29],cluster_cols = TRUE)
+# write.table(DE_Necro, "KEGGNecroptosis SC1,7,10 DESeq LRT.txt", sep="\t", row.names=FALSE, quote=FALSE)
+
+
+Apop = read.delim("KEGGApoptosis_hsa04210_06-25-18.txt", header=T, stringsAsFactors = F)
+Apop = Apop[rowSums(is.na(Apop)) == 0, ]
+DE_Apop = merge(GE_Imp), Apop, by.x = "hgnc_symbol", by.y = "GeneName")
+row.names(DE_Apop) = make.names(DE_Apop[,"hgnc_symbol"], unique = TRUE)
+pheatmap(DE_Apop[3:29],cluster_cols = TRUE, scale = "row")
+# write.table(DE_Apop, "KEGGApoptosis SC1,7,10 DESeq LRT.txt", sep="\t", row.names=FALSE, quote=FALSE)
+
+Ferr = read.delim("KEGGFerroptosis_hsa04216_06-25-18.txt", header=T, stringsAsFactors = F)
+Ferr = Ferr[rowSums(is.na(Ferr)) == 0, ]
+DE_Ferr = merge(GE_Imp, Ferr, by.x = "hgnc_symbol", by.y = "GeneName")
+row.names(DE_Ferr) = make.names(DE_Ferr[,"hgnc_symbol"], unique = TRUE)
+pheatmap(DE_Ferr[4:12],cluster_cols=FALSE, scale = "row")
+# write.table(DE_Ferr, "KEGGFerroptosis SC1,7,10 DESeq LRT.txt", sep="\t", row.names=FALSE, quote=FALSE)
+
+
+```
+
+#### 4. Different LC comparisons. Between subclones and at baseline vs idling.
+Zscore heatmaps of relevant comparisons can be made as in above to visualize.
+
+```{r eval=FALSE}
+
+#USES ABOVE CODE TO LINE 280. Run that pseudo-function.
+
+# library(pheatmap)
+#Comparisons of difEx between subclones at baseline and idling
+BetweenBase = c("SC07_day0/SC01_day0", "SC10_day0/SC01_day0", "SC10_day0/SC07_day0")
+BetweenIdle = c("SC07_day8/SC01_day8", "SC10_day8/SC01_day8", "SC10_day8/SC07_day8")
+ 
+
+#Unsure of how strict to make the cutoff. Should all the genes between clones be differentially expressed (3) or is a single difference sufficient?
+Btw_b = GE_fold[,c("ensembl_gene_id", "hgnc_symbol", "padj", BetweenBase)]
+Btw_b1 = Btw_b[rowSums(abs(Btw_b[,4:6])>=1.5)>=1,]
+Btw_b2 = Btw_b[rowSums(abs(Btw_b[,4:6])>=1.5)>=2,]
+Btw_b3 = Btw_b[rowSums(abs(Btw_b[,4:6])>=1.5)>=3,]
+
+Btw_i = GE_fold[,c("ensembl_gene_id", "hgnc_symbol", "padj", BetweenIdle)]
+Btw_i1 = Btw_i[rowSums(abs(Btw_i[,4:6])>=1.5)>=1,]
+Btw_i2 = Btw_i[rowSums(abs(Btw_i[,4:6])>=1.5)>=2,]
+Btw_i3 = Btw_i[rowSums(abs(Btw_i[,4:6])>=1.5)>=3,]
+
+#This does not account for same direction of change. This can be plotted in a heatmap to view.
+#Members that were "lost" by the baseline condition at being different. Were no longer found diffEx between the subclones when comparing baseline to idling DEGs.
+LostDEG_b_1 = subset(Btw_b1,!Btw_b1$ensembl_gene_id%in%Btw_i1$ensembl_gene_id)
+LostDEG_b_2 = subset(Btw_b2,!Btw_b2$ensembl_gene_id%in%Btw_i2$ensembl_gene_id)
+LostDEG_b_3 = subset(Btw_b3, !Btw_b3$ensembl_gene_id%in%Btw_i3$ensembl_gene_id)
+
+##Make heatmap
+LostDEG_b_3_mean = subset(GE_mean,GE_mean$ensembl_gene_id%in%LostDEG_b_3$ensembl_gene_id)
+row.names(LostDEG_b_3_mean) = make.names(LostDEG_b_3_mean[,"hgnc_symbol"], unique = TRUE)
+pheatmap(LostDEG_b_3_mean[4:12],cluster_cols=FALSE, scale = "row")
+
+#Members that remained different. 
+StaticDEG_b_1 = subset(Btw_b1,Btw_b1$ensembl_gene_id%in%Btw_i1$ensembl_gene_id)
+StaticDEG_b_2 = subset(Btw_b2,Btw_b2$ensembl_gene_id%in%Btw_i2$ensembl_gene_id)
+StaticDEG_b_3 = subset(Btw_b3, Btw_b3$ensembl_gene_id%in%Btw_i3$ensembl_gene_id)
+
+##Some HGNC_symbols are duplicates! I switched to ensembl_gene_id to fix.
+StaticDEG_i_3 = subset(Btw_i3, Btw_i3$ensembl_gene_id%in%Btw_b3$ensembl_gene_id)
+
+
+##Make heatmap
+StaticDEG_b_3_mean = subset(GE_mean,GE_mean$ensembl_gene_id%in%StaticDEG_b_3$ensembl_gene_id)
+row.names(StaticDEG_b_3_mean) = make.names(StaticDEG_b_3_mean[,"hgnc_symbol"], unique = TRUE)
+pheatmap(StaticDEG_b_3_mean[4:12],cluster_cols=FALSE, scale = "row")
+
+
+#Members that "gained" differences between the subclones in idling.  
+GainDEG_i_1 = subset(Btw_i1, !Btw_i1$ensembl_gene_id%in%Btw_b1$ensembl_gene_id)
+GainDEG_i_2 = subset(Btw_i2, !Btw_i2$ensembl_gene_id%in%Btw_b2$ensembl_gene_id)
+GainDEG_i_3 = subset(Btw_i3, !Btw_i3$ensembl_gene_id%in%Btw_b3$ensembl_gene_id)
+
+##Make heatmap
+GainDEG_i_3_mean = subset(GE_mean,GE_mean$ensembl_gene_id%in%GainDEG_i_3$ensembl_gene_id)
+row.names(GainDEG_i_3_mean) = make.names(GainDEG_i_3_mean[,"hgnc_symbol"], unique = TRUE)
+pheatmap(GainDEG_i_3_mean[4:12],cluster_cols=FALSE, scale = "row")
+
+
+#Members that were differentially expressed between idling (8day) and baseline within subclones. Those with shared diffEx may be convergent across multiple subclones depending on direction of expresison change.
+Endpoint = c("SC01_day8/SC01_day0", "SC07_day8/SC07_day0", "SC10_day8/SC10_day0")
+BtoIdle = GE_fold[,c("ensembl_gene_id", "hgnc_symbol", "padj", Endpoint)]
+BtoIdle_1 = BtoIdle[rowSums(abs(BtoIdle[,4:6])>=1.5)>=1,]
+BtoIdle_2 = BtoIdle[rowSums(abs(BtoIdle[,4:6])>=1.5)>=2,]
+BtoIdle_3 = BtoIdle[rowSums(abs(BtoIdle[,4:6])>=1.5)>=3,]
+
+##Make heatmap
+BtoIdle_2_mean = subset(GE_mean,GE_mean$ensembl_gene_id%in%BtoIdle_2$ensembl_gene_id)
+row.names(BtoIdle_2_mean) = make.names(BtoIdle_2_mean[,"hgnc_symbol"], unique = TRUE)
+
+BtoIdle_2_mean_incExp = BtoIdle_2_mean[which(BtoIdle_2_mean$SC01_day0 < BtoIdle_2_mean$SC01_day8),]
+BtoIdle_2_mean_incExp = BtoIdle_2_mean_incExp[which(BtoIdle_2_mean_incExp$SC07_day0 < BtoIdle_2_mean_incExp$SC07_day8),]
+BtoIdle_2_mean_incExp[which(BtoIdle_2_mean_incExp$SC10_day0 < BtoIdle_2_mean_incExp$SC10_day8),]
+
+LostDEG_b_2_mean = subset(GE_mean,GE_mean$ensembl_gene_id%in%LostDEG_b_2$ensembl_gene_id)
+row.names(LostDEG_b_2_mean) = make.names(LostDEG_b_2_mean[,"hgnc_symbol"], unique = TRUE)
+pheatmap(LostDEG_b_2_mean[4:12],cluster_cols=FALSE, scale = "row")
+
+BtoIdleIncExp_DEbetweenSCs = BtoIdle_2_mean_incExp[which(row.names(BtoIdle_2_mean_incExp) %in% row.names(LostDEG_b_2_mean)),]
+
+pheatmap(BtoIdle_2_mean_incExp[4:12],cluster_cols=FALSE, scale = "row")
+
+# library(devtools)
+# # install_github("wjawaid/enrichR")
+# library(enrichR)
+dbs <- listEnrichrDbs()
+head(dbs)
+dbs <- c("GO_Molecular_Function_2015", "GO_Cellular_Component_2015", "GO_Biological_Process_2015")
+
+enriched <- enrichr(row.names(BtoIdle_2_mean_incExp), dbs)
+
+View(enriched[["GO_Molecular_Function_2015"]])
+View(enriched[["GO_Cellular_Component_2015"]])
+View(enriched[["GO_Biological_Process_2015"]])
+
+enriched_MF_sig <- enriched[["GO_Molecular_Function_2015"]][enriched[["GO_Molecular_Function_2015"]]$Adjusted.P.value<0.05,]
+enriched_MF_sig_df <- data.frame(enriched_MF_sig[,c(1,4,9)])
+write.csv(enriched_MF_sig_df, "enriched_MF_significant.csv")
+
+enriched_BP_sig <- enriched[["GO_Biological_Process_2015"]][enriched[["GO_Biological_Process_2015"]]$Adjusted.P.value<0.05,]
+enriched_BP_sig_df <- data.frame(enriched_BP_sig[,c(1,4,9)])
+# write.csv(enriched_BP_sig_df, "enriched_BP_significant.csv")
+
+Gini_scGenes <- c("APOE", "BCAN", "CES1", "CITED1",
+                  "CPM", "CTSF", "DCT", "EDNRB", 
+                  "EGR1", "ESRP1", "FSTL1", "MALAT1",
+                  "MAP2K6", "MCF2L", "MLANA", "MXD4",
+                  "OCA2", "PMEL", "SEMA6A", "SNAI2",
+                  "SOX4", "TSPAN10")
+enriched_sc <- enrichr(Gini_scGenes, dbs)
+
+row.names(BtoIdle_2_mean_incExp) %in% Gini_scGenes
+
+```
+
+
+
+#### Rest of Jack's Analysis ####
+```{r eval=FALSE}
+#Visually inspect trending members from heatmaps.
+#Plots of specific trending members?
+p <- ggplot(data=df2, aes(x=dose, y=len, fill=supp)) +
+  geom_bar(stat="identity", color="black", position=position_dodge())+
+  theme_minimal()
+```
+
+### NOTE: code below reuses object names... WILL OVERWRITE!
+```{r eval=FALSE}
+#GLM Coef Heatmap.
+betas <- coef(dds)
+topGenes <- which(res$padj <= 0.001)
+mat <- data.frame(betas[topGenes,])
+mat$ensembl_gene_id = row.names(mat)
+mat$padj = res[topGenes,"padj"]
+# ensembl <- useMart("ensembl")
+# mart <- useDataset("hsapiens_gene_ensembl", mart = ensembl)
+# genes = row.names(mat)
+# G_list <- getBM(attributes= c("ensembl_gene_id","hgnc_symbol"),
+#                 filters= "ensembl_gene_id",
+#                 values=genes,
+#                 mart=mart)
+
+# GE_data <- merge(mat, G_list, by = "ensembl_gene_id")
+# rownames(GE_data) <- make.names(GE_data[,"hgnc_symbol"], unique = TRUE)
+# GE_data = GE_data[order(GE_data$padj),]
+
+
+#Sorting script to pick out entries greater than or less than +-1
+eg = c()
+for(i in 3:10){
+  g = which(GE_data[,i] > 3 | GE_data[,i] < -3)
+  eg = c(eg,g)
+}
+eg = unique(eg)
+
+mat = GE_data[eg,-c(1:2,11,12)]
+thr <- 3 
+mat[mat < -thr] <- -thr
+mat[mat > thr] <- thr
+# library(pheatmap)
+pheatmap(mat, cluster_cols = FALSE)
+
+# ssdg = sdg[1:1000, ]
+dim(sdg)
+head(sdg)
+
+```
+
+
