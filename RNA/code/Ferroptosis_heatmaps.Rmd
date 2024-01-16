@@ -16,6 +16,7 @@ library(pheatmap)
 library(gplots) # needed for color palettes, redblue(), colorRampPalette()
 ```
 
+
 ```{r}
 SAVEPLOTS <- FALSE
 ```
@@ -67,8 +68,15 @@ Fer_dat = Rmisc::summarySE(Fer_melt, measurevar = "value", groupvars = c("Popula
 Fer_dat$Time = as.numeric(gsub("[^[:digit:]]","",Fer_dat$Time))
 ```
 
+### Low expressed genes
+Add genes to `excl_genes` where all read counts < 16 (log2==4).
+```{r}
+excl_genes <- union(excl_genes, rownames(countdata_Fer[which(apply(countdata_Fer, 1, function(x) all(x<=16))),]))
+```
+
+
 ### Plot change over time of BRAFi for each subclone
-Changed plotting from linear to log2 scale for better visualization of changes.
+Changed plotting from linear to log2 scale for better visualization of changes. Still raw (non-normalized) counts.
 ```{r fig.height=25, fig.width=20}
 Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=log2(value), group = interaction(variable, Population))) + 
   geom_line(linewidth=1.5, aes(color = Population)) + 
@@ -99,66 +107,61 @@ Fer_dat <- Rmisc::summarySE(Fer_melt, measurevar = "value", groupvars = c("Popul
 Fer_dat$Time <- as.numeric(gsub("[^[:digit:]]","",Fer_dat$Time))
 ```
 
-
-
-
-```{r fig.height=10, fig.width=8}
-# normdata_Fer
-samples <- c("SC01_day0", "SC01_day3", "SC01_day8", "SC07_day0", "SC07_day3", "SC07_day8", "SC10_day0", "SC10_day3", "SC10_day8")
-test <- normdata_Fer
-test1 <- sapply(samples, function(x) rowMeans(test[, grep(x, colnames(test))]))
-test2 <- as.data.frame(test1[complete.cases(test1),])
-
-####
-# Plot pheatmap (z-score) of gene list 
-test3 <- test2
-test3$Gene <- rownames(test2)
-test3_sub <- subset(test3, !Gene %in% excl_genes)
-test3_sub <- test3_sub[,1:9]
-pheatmap(test3_sub,cluster_cols=FALSE, cluster_rows = F, scale = "row")
-
-test4_special <- subset(test3, Gene %in% ferr_genes_4plots)
-test4_special <- test4_special[,1:9]
-pheatmap(test4_special,cluster_cols=FALSE, cluster_rows = F, scale = "row")
-
-
+### Remove excluded genes
+```{r}
+Fer_dat <- Fer_dat[!Fer_dat$variable %in% excl_genes,]
 ```
 
+### Plot change over time of BRAFi for each subclone
+Changed plotting from linear to log2 scale for better visualization of changes.
+```{r fig.height=25, fig.width=20}
+Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=value, group = interaction(variable, Population))) + 
+  geom_line(linewidth=1.5, aes(color = Population)) + 
+  geom_point(size = 1.5, aes(color = Population)) + facet_wrap(~variable, ncol = 5, scales = "free") +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd, color = Population), width=.2, linewidth=1.5) +
+  theme_bw() + xlab("Time (days)") + ylab("Gene Counts") +
+  ggtitle("Ferroptosis gene signature") +
+  theme(legend.text = element_text(size = 10), legend.position = "right", 
+        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), axis.text=element_text(size=12),
+        legend.title = element_text(size=12,face="bold"),
+        axis.title=element_text(size=12,face="bold"))
+
+Fer_ggploted
+
+if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_normCounts_SKMEL5sublines+treatment.pdf", width = 20, height = 25)
+```
+
+
 ```{r}
+# normdata_Fer
+samples <- c("SC01_day0", "SC01_day3", "SC01_day8", "SC07_day0", "SC07_day3", "SC07_day8", "SC10_day0", "SC10_day3", "SC10_day8")
+test <- sapply(samples, function(x) rowMeans(normdata_Fer[, grep(x, colnames(normdata_Fer))]))
+test <- as.data.frame(test[complete.cases(test),])
+
+
 
 allFC <- function(DEProc,startcol,endcol){ 
-  GE_fold = DEProc[,-c(startcol:endcol)]
-  colvec = colnames(DEProc)[startcol:endcol]
+  GE_fold <- DEProc[,-c(startcol:endcol)]
+  colvec <- colnames(DEProc)[startcol:endcol]
   
   #Last index is a self comparison and is removed
   for(k in 1:(length(colvec)-1)){
     #Start with column that is 1 away from index 
     for(j in (k+1):length(colvec)){
-      compnam = paste0(colvec[j],"/",colvec[k])
+      compnam <- paste0(colvec[j],"/",colvec[k])
       #Loop through each gene/row  
       for(i in 1:nrow(DEProc)){
-        f = DEProc[i,colvec[j]]
-        h = DEProc[i,colvec[k]]
-        GE_fold[i, compnam] = log2(f/h)
-
-        #Capture upregulation and down regulation
-        # if(f>h){
-        #   # GE_fold[i,compnam] = 2^(f-h)
-        #   GE_fold[i,compnam] = log2(f/h)
-        # }else{
-        #   # GE_fold[i,compnam] = -2^(h-f)
-        #   GE_fold[i,compnam] = log2(f/h)
-      #   }
-      #   
+        f <- DEProc[i,colvec[j]]
+        h <- DEProc[i,colvec[k]]
+        GE_fold[i, compnam] <- log2(f/h)
      }
     }
   }
-  
+
   return(GE_fold)
-  
 }
 
-GE_fold <- allFC(test2, 1,9)
+GE_fold <- allFC(test, 1,9)
 ImpRat = c("SC01_day3/SC01_day0", "SC01_day8/SC01_day0", 
            "SC07_day3/SC07_day0", "SC07_day8/SC07_day0", 
            "SC10_day3/SC10_day0", "SC10_day8/SC10_day0")
@@ -206,7 +209,7 @@ par(mar=c(8,5,1,1), oma=c(3,1,0,0))
 dtp <- as.matrix(Ferr_fold[,1:6])
 dtp <- dtp[!rownames(dtp) %in% excl_genes,]
 colnames(dtp) <- gsub("day","D",colnames(dtp)) 
-mycolors <- colorRampPalette(c("blue","white","red"))(50)
+mycolors <- colorRampPalette(c("darkblue","blue","white","red","red4"))(50)
 
 gplots::heatmap.2(dtp, dendrogram="none", scale="none", Rowv=FALSE, Colv=FALSE, trace="none", tracecol=NA,
                   col=mycolors, srtCol=0, adjCol=0.5, colsep=c(2,4), offsetRow=-35, adjRow=c(1, 0.5),
@@ -214,11 +217,66 @@ gplots::heatmap.2(dtp, dendrogram="none", scale="none", Rowv=FALSE, Colv=FALSE, 
                   keysize=1, key.title=NA, key.ylab=NA, key.xlab="Log2 fold change", key.par=list(mar=c(6,3,5,1)))
 ```
 
+### Gene annotations
+Manually assembled gene annotations.
+```
+annot <- c("Glutathione Metabolism",
+           "PUFA",
+           "Endosome Ferous Transfer",
+           "Ferroportin Export",
+           "Autolysosome Ferritin Storage",
+           "Ferric Acid Reduction",
+           "Heme Iron Transfer",
+           "Mitochondria")
+annot_col <- c("orange","yellow","green","turquoise","purple","red","brown",grey(0.5))
+```
+
+
+```{r}
+ferr_genes_annot <- read.csv("../data/ferroptosis_gene_annot.csv")
+ferr_genes_annot[ferr_genes_annot==""] <- NA
+annots <- unique(unlist(apply(ferr_genes_annot[,grep("annot",colnames(ferr_genes_annot))],2,unique)))
+annots <- annots[annots != "" & !is.na(annots)]
+annots_col <- c("yellow","purple",grey(0.5),"black","red","orange","green","turquoise","brown")
+names(annots_col) <- annots
+
+dat <- Ferr_fold[order(match(Ferr_fold$Gene,ferr_genes_annot$gene_name)),]
+
+fer <- list(genes=Ferr_fold$Gene, 
+            fold_exp=dat[,1:6], 
+            annot1=ferr_genes_annot[match(dat$Gene,ferr_genes_annot$gene_name),"annot1"],
+            annot2=ferr_genes_annot[match(dat$Gene,ferr_genes_annot$gene_name),"annot2"]
+            )
+```
+
+
 
 ## Using `ComplexHeatmap()`
 ```{r}
 if (!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager")
 BiocManager::install("ComplexHeatmap")
+
+library(ComplexHeatmap)
 ```
+
+```{r fig.height=8, fig.width=8}
+ht_opt(
+    legend_title_gp = gpar(fontsize = 8, fontface = "bold"), 
+    legend_labels_gp = gpar(fontsize = 8), 
+    heatmap_column_names_gp = gpar(fontsize = 8),
+    heatmap_column_title_gp = gpar(fontsize = 10),
+    heatmap_row_title_gp = gpar(fontsize = 8)
+)
+
+ht_list = Heatmap(as.matrix(fer$fold_exp), name = "Log2 fold expression",
+                  width = unit(8, "cm"), 
+                  cluster_rows = FALSE, cluster_columns = FALSE,
+                  row_names_side = "left", row_names_gp = gpar(fontsize = 8)) +
+    Heatmap(fer$annot1, name = "GO:1", col = annots_col, width = unit(5, "mm")) + 
+    Heatmap(fer$annot2, name = "GO:2", col = annots_col, width = unit(5, "mm"))
+
+ht_list
+```
+
 
