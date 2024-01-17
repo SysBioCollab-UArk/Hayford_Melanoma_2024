@@ -238,12 +238,16 @@ RSL3_UTvI$State <- factor(RSL3_UTvI$State, levels = c("Untreated", "Idling"))
 RSL3_UTvI_Fer$State <- factor(RSL3_UTvI$State, levels = c("Untreated", "Idling"))
 
 RSL3_UTvI_all$State <- factor(RSL3_UTvI_all$State, levels = c("Untreated", "Idling"))
+
+### Change drug2 to Control or Ferrostatin-1, rather than No or Yes
+RSL3_UTvI_all$drug2 <- ifelse(RSL3_UTvI_all$drug2=="No","Control","Ferrostatin-1")
+IC50_df$drug2 <- ifelse(IC50_df$drug2=="No","Control","Ferrostatin-1")
 ```
 
 
-```{r Generate plots, fig.height=3, fig.width=8, warning=FALSE}
+```{r Generate plots, fig.height=6, fig.width=3, warning=FALSE}
 ggplot(RSL3_UTvI_all, aes(x=conc, y=p, color=State, fill=State)) +
-  facet_wrap(~drug2) +
+  facet_wrap(~drug2, ncol=1) +
   geom_ribbon(aes(ymin=pmin, ymax=pmax), alpha=0.2, color = NA) +
   geom_line(linewidth = 1) +
   geom_vline(data = IC50_df, aes(xintercept = IC50, color = State), linetype = "dashed", linewidth = 0.75) +
@@ -259,10 +263,10 @@ ggplot(RSL3_UTvI_all, aes(x=conc, y=p, color=State, fill=State)) +
         plot.title = element_text(size = 14, hjust = 0.5), 
         axis.text=element_text(size=12),
         legend.title = element_text(size=8),
-        legend.position = "right",
+        legend.position = "top",
         axis.title=element_text(size=12),
         panel.grid = element_blank())
 
-if(SAVEPLOTS)   ggsave("RSL3-all_DRC_2024.pdf", width = 8, height = 3)
+if(SAVEPLOTS)   ggsave("RSL3-all_DRC_2024.pdf", width = 3, height = 6)
 ```
 
