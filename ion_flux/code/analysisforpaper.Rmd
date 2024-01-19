@@ -16,7 +16,7 @@ library(ggpubr)
 
 ### Load dataset
 ```{r}
-DATADIR <- "../data/"
+DATADIR <- "../data"
 fn <- "VQU_008_CPA_3add_1tip_FLUO-8_AM_Feb_12_21_1023.txt"
 fn_filepath <- file.path(DATADIR, fn)
 CaFlux <- read.csv(fn_filepath, sep = "\t")
@@ -35,7 +35,7 @@ dat_melt$Time <- as.numeric(dat_melt$Time) / 1000 # convert ms to s
 dat_melt$Well <- as.character(dat_melt$Well)
 dat_melt$Well <- fixWellName(dat_melt$Well)
 
-d <- addMapInfo(dat_melt, file.path(DATADIR, "platemap_20210211.tsv"))
+d <- addMapInfo(dat_melt, file.path("..", "platemaps", "platemap_20210211.tsv"))
 ```
 
 #### Plot raw data
