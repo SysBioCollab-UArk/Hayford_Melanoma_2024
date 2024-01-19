@@ -1,0 +1,143 @@
+---
+title: "Calcium flux SOCE"
+output: html_notebook
+---
+
+### Load packages
+```{r}
+library(ggplot2)
+library(reshape2)
+library(readxl)
+library(dplyr)
+library(diprate)
+library(tidyr)
+library(ggpubr)
+```
+
+### Load dataset
+```{r}
+DATADIR <- "../data/"
+fn <- "VQU_008_CPA_3add_1tip_FLUO-8_AM_Feb_12_21_1023.txt"
+fn_filepath <- file.path(DATADIR, fn)
+CaFlux <- read.csv(fn_filepath, sep = "\t")
+
+# clean up dataframe
+names(CaFlux) <- names(CaFlux[,-1]) # remove "Time" from names
+CaFlux <- CaFlux[, 1:384] # remove the last column, which has only NA values
+CaFlux$Time <- rownames(CaFlux) # the row names are the time points
+
+dat_melt <- melt(CaFlux, id.vars= "Time", value.name = "Intensity", 
+                variable.name = "Well")
+
+dat_melt$row <- substr(dat_melt$Well, 1, 1) # Well letter (e.g., A)
+dat_melt$column <- as.numeric(substr(dat_melt$Well, 2, 3)) # Well number (e.g., 24)
+dat_melt$Time <- as.numeric(dat_melt$Time) / 1000 # convert ms to s
+dat_melt$Well <- as.character(dat_melt$Well)
+dat_melt$Well <- fixWellName(dat_melt$Well)
+
+d <- addMapInfo(dat_melt, file.path(DATADIR, "platemap_20210211.tsv"))
+```
+
+#### Plot raw data
+```{r}
+avgd <- d %>%
+  group_by(Time, cell.line, drug1, drug2) %>%
+  summarise(mean = mean(Intensity), se = sd(Intensity)/sqrt(8), n = n())
+
+avgd <- avgd[avgd$cell.line == "SKMEL5" & avgd$drug2 == "CPA-Ca2+",]
+avgd$selow <- avgd$mean - avgd$se
+avgd$sehigh <- avgd$mean + avgd$se
+
+avgd %>%
+ggplot() +
+  geom_line(aes(x=Time, y=mean, color=drug1)) +
+  geom_ribbon(aes(x=Time, ymin=selow, ymax=sehigh, group=drug1, fill=drug1), 
+              alpha=0.2) +
+  theme(legend.position = c(0.2,0.8), legend.text = element_text(size = 12),
+        axis.title.x = element_text(size=12), 
+        axis.title.y = element_text(size=12), 
+        axis.text.x = element_text(size=12), 
+        axis.text.y = element_text(size=12)) +
+  labs(x = "Time (s)", y = "Raw Intensity") + 
+  scale_color_manual(name=NULL, values = c("red", "blue"), 
+                     labels = c("untreated", "idling DTP")) +
+  scale_fill_manual(name=NULL, values = c("red", "blue"), 
+                    labels = c("untreated", "idling DTP")) +
+  xlim(0,700)
+```
+
+### Scale and normalize data
+```{r}
+# scale and normalize idling data
+idling <- avgd[avgd$drug1 == "PLX4720",]
+min_idling <- min(idling$mean)
+idling$scaled_mean <- idling$mean - min_idling
+max_iono_idling <- max(idling$scaled_mean[idling$Time > 550])
+idling$norm_mean <- idling$scaled_mean / max_iono_idling
+idling$norm_se <- idling$se / max_iono_idling
+
+# scale and normalize untreated data
+untreated <- avgd[avgd$drug1 == "",]
+min_untreated <- min(untreated$mean)
+untreated$scaled_mean <- untreated$mean - min_untreated
+max_iono_untr <- max(untreated$scaled_mean[untreated$Time > 550])
+untreated$norm_mean <- untreated$scaled_mean / max_iono_untr
+untreated$norm_se <- untreated$se / max_iono_untr
+
+avgd2 <- rbind(idling, untreated)
+avgd2$normselow <- avgd2$norm_mean - avgd2$norm_se
+avgd2$normsehigh <- avgd2$norm_mean + avgd2$norm_se
+
+avgd2 %>%
+ggplot() +
+  geom_line(aes(x=Time, y=norm_mean, color=drug1)) +
+  geom_ribbon(aes(x=Time, ymin=normselow, ymax=normsehigh, group=drug1, fill=drug1), 
+              alpha=0.2) +
+  theme(legend.position = c(0.2,0.8), legend.text = element_text(size = 12),
+        axis.title.x = element_text(size=12), 
+        axis.title.y = element_text(size=12), 
+        axis.text.x = element_text(size=12), 
+        axis.text.y = element_text(size=12)) +
+  labs(x = "Time (s)", y = "Normalized Intensity") +
+  scale_color_manual(name=NULL, values = c("red", "blue"), 
+                     labels = c("untreated", "idling DTP")) +
+  scale_fill_manual(name=NULL, values = c("red", "blue"), 
+                    labels = c("untreated", "idling DTP")) +
+  xlim(0,700)
+```
+
+### Remove early and late data points
+```{r}
+avgd2[avgd2$Time > 20 & avgd2$Time < 550,] %>%
+ggplot() +
+  geom_rect(aes(xmin = 280, xmax = Inf, ymin = -Inf, ymax = 1.15),
+                   fill = "oldlace", color="black", size=0, alpha = 0.05) +
+  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 1.15),
+                   fill = NA, color="black", size=0.5, alpha = 0.05) +
+  geom_line(aes(x=Time, y=norm_mean, color=drug1), size=1.5) +
+  geom_ribbon(aes(x=Time, ymin=normselow, ymax=normsehigh, group=drug1, fill=drug1), 
+              alpha=0.3) +
+  theme(legend.position = c(0.2,0.8), legend.text = element_text(size = 20),
+        legend.spacing.y = unit(10, 'pt'),
+        axis.title.x = element_text(size=20), 
+        axis.title.y = element_text(size=20), 
+        axis.text.x = element_text(size=20), 
+        axis.text.y = element_text(size=20),
+        panel.background = element_rect(fill = "white", color = NA, 
+                                        linetype = "solid"),
+        plot.margin=unit(c(1,0,0,0), "cm"),) +
+  guides(color = guide_legend(byrow = TRUE)) +
+  labs(x = "Time (s)", y = "Normalized Fluorescence") +
+  scale_color_manual(name=NULL, values = c("red", "blue"), 
+                     labels = c("untreated", "idling DTP")) +
+  scale_fill_manual(name=NULL, values = c("red", "blue"), 
+                    labels = c("untreated", "idling DTP")) +
+  xlim(0,600) + 
+  scale_y_continuous(breaks=seq(0,1,0.2)) +
+  coord_cartesian(ylim = c(0, 1.15), clip = "off") +
+  geom_bracket(xmin = 0, xmax = 280, y.position = 1.21, label = "+CPA", 
+               label.size = 7, vjust = -0.2, size = 0.6) + 
+  geom_bracket(xmin = 280, xmax = 550, y.position = 1.21, label = '"+Ca"^"2+"', 
+               type = "expression", label.size = 7, vjust = -0.2, size = 0.6)
+ggsave("SOCE_untreated_idling_300_dpi.png", dpi=300)
+```
