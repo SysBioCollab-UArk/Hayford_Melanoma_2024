@@ -1,0 +1,65 @@
+gene_name,annot1,annot2
+LPCAT3,PUFA,
+ACSL1,PUFA,
+ACSL3,PUFA,
+ACSL4,PUFA,
+ACSL6,PUFA,
+ALOX15,PUFA,
+SAT2,PUFA,
+ACSL5,PUFA,
+POR,PUFA,
+SAT1,PUFA,
+GSS,PUFA,Glutathione Metabolism
+GPX4,PUFA,Glutathione Metabolism
+SLC7A11,,Glutathione Metabolism
+GCLC,,Glutathione Metabolism
+GCLM,,Glutathione Metabolism
+ CP,,Glutathione Metabolism
+SLC1A5,,Glutathione Metabolism
+SLC3A2,,Glutathione Metabolism
+CTH,,Glutathione Metabolism
+TXNRD1,,Glutathione Metabolism
+SLC38A1,,Glutathione Metabolism
+CBS,,Glutathione Metabolism
+FDFT1,Terpenoid Biosynthesis,
+COQ2,Terpenoid Biosynthesis,
+HMGCR,Terpenoid Biosynthesis,
+FTH1,Autolysosome Ferritin Storage,
+FTL,Autolysosome Ferritin Storage,
+ATG7,Autolysosome Ferritin Storage,
+HMOX1,Autolysosome Ferritin Storage,
+MAP1LC3C,Autolysosome Ferritin Storage,
+PCBP1,Autolysosome Ferritin Storage,
+BACH1,Autolysosome Ferritin Storage,
+NCOA4,Autolysosome Ferritin Storage,
+MAP1LC3B,Autolysosome Ferritin Storage,
+MAP1LC3A,Autolysosome Ferritin Storage,
+ATG5,Autolysosome Ferritin Storage,
+PCBP2,Endosome Ferrous Transfer,
+SLC40A1,Endosome Ferrous Transfer,
+STEAP3,Endosome Ferrous Transfer,
+SLC39A14,Endosome Ferrous Transfer,
+HSPB1,Endosome Ferrous Transfer,
+IREB2,Endosome Ferrous Transfer,
+SLC11A2,Endosome Ferrous Transfer,
+PHKG2,Endosome Ferrous Transfer,
+CISD1,Endosome Ferrous Transfer,
+SLC39A8,Endosome Ferrous Transfer,
+TF,Endosome Ferrous Transfer,
+TFRC,Endosome Ferrous Transfer,
+VDAC2,Mitochondria,
+VDAC3,Mitochondria,
+CYBB,Mitochondria,
+AIFM2,Mitochondria,
+FTMT,Mitochondria,
+NOX1,Superoxide Generation,
+NOX4,Superoxide Generation,
+DPP4,Superoxide Generation,
+GCH1,Inhibition of Ferroptosis,
+CHMP5,Inhibition of Ferroptosis,
+CHMP6,Inhibition of Ferroptosis,
+AKR1C3,Inhibition of Ferroptosis,
+AKR1C1,Inhibition of Ferroptosis,
+AKR1C2,Inhibition of Ferroptosis,
+PRNP,Ferric acid reduction,
+TP53,,

@@ -1,0 +1,281 @@
+---
+title: "Converting Ferroptosis heatmap code to notebook"
+output: html_notebook
+author: Darren Tyson
+date: 2024-01-14
+---
+
+Code copied from `Ferroptosis_heatmaps.R` and fixed to run within this repo.
+
+
+```{r}
+library(reshape2)
+library(ggplot2)
+library(scales)
+library(pheatmap)
+library(gplots) # needed for color palettes, redblue(), colorRampPalette()
+
+if(!"ComplexHeatmap" %in% installed.packages()) BiocManager::install("ComplexHeatmap")
+library(ComplexHeatmap)
+```
+
+
+```{r}
+SAVEPLOTS <- FALSE
+```
+
+
+```{r Load data}
+load("../data/merged_countdata.RData") # object countdata
+Ferr <- read.delim("../data/KEGGFerroptosis_hsa04216_06-25-18.txt", header=T, stringsAsFactors = F)
+ferr_genes <- Ferr$GeneName  # ferroptosis genes from KEGG (2018)
+load("../data/RLD_SC-1,7,10_0,3,8d_20180701.RData")  # object rld
+```
+
+Another ferroptosis gene list from Wikipathways/GSEA: https://www.gsea-msigdb.org/gsea/msigdb/cards/WP_FERROPTOSIS.html
+File downloaded 2024-01-14 and saved in `../data/WP_FERROPTOSIS.v2023.2.Hs.tsv`
+
+```{r}
+ferr_genes_wikipw_raw <- read.table('../data/WP_FERROPTOSIS.v2023.2.Hs.tsv', sep="\t", row.names=1)
+ferr_genes_wikipw <- ferr_genes_wikipw_raw["GENE_SYMBOLS",]
+ferr_genes_wikipw <- unlist(strsplit(ferr_genes_wikipw,","))
+ferr_genes_wikipw <- ferr_genes_wikipw[ferr_genes_wikipw!=""]
+```
+
+
+Unclear why these genes should be excluded.
+```{r}
+excl_genes <- c("ALOX15", "ACSL1", "ACSL3",
+                "ACSL5", "ACSL6", "TP53", "TF",
+                "CP", "MAP1LC3A", "MAP1LC3C",
+                "CYBB")
+```
+
+### Define which gene set to use for all plots
+object is `ferrgenes_4plots`. Setting to first item in list will use newer and larger list of genes from wikipathways; setting to item 2 will make output match previously generated plots.
+```{r}
+ferr_genes_4plots <- list(ferr_genes_wikipw,ferr_genes)[[1]]
+```
+
+
+### Process raw count data
+```{r}
+Ferr <- Ferr[rowSums(is.na(Ferr)) == 0, ]
+
+countdata_Fer <- countdata[ferr_genes_4plots,]  # select genes here
+
+Fer_samples = colsplit(colnames(countdata_Fer), pattern = "_", names = c("Population", "Time", "Replicate"))
+Fer_plot = cbind(Fer_samples, t(countdata_Fer))
+Fer_melt = melt(data = Fer_plot, id.vars = c("Population", "Time", "Replicate"), measure.vars = ferr_genes_4plots)  # select genes here
+Fer_dat = Rmisc::summarySE(Fer_melt, measurevar = "value", groupvars = c("Population", "Time", "variable"))
+Fer_dat$Time = as.numeric(gsub("[^[:digit:]]","",Fer_dat$Time))
+```
+
+### Low expressed genes
+Add genes to `excl_genes` where all read counts < 16 (log2==4).
+```{r}
+excl_genes <- union(excl_genes, rownames(countdata_Fer[which(apply(countdata_Fer, 1, function(x) all(x<=16))),]))
+```
+
+
+### Plot change over time of BRAFi for each subclone
+Changed plotting from linear to log2 scale for better visualization of changes. Still raw (non-normalized) counts.
+```{r fig.height=25, fig.width=20}
+Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=log2(value), group = interaction(variable, Population))) + 
+  geom_line(linewidth=1.5, aes(color = Population)) + 
+  geom_point(size = 1.5, aes(color = Population)) + facet_wrap(~variable, ncol = 5, scales = "free") +
+  geom_errorbar(aes(ymin=log2(value-sd), ymax=log2(value+sd), color = Population), width=.2, linewidth=1.5) +
+  theme_bw() + xlab("Time (days)") + ylab("Gene Counts") +
+  ggtitle("Ferroptosis gene signature") +
+  theme(legend.text = element_text(size = 10), legend.position = "right", 
+        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), axis.text=element_text(size=12),
+        legend.title = element_text(size=12,face="bold"),
+        axis.title=element_text(size=12,face="bold"))
+
+Fer_ggploted
+
+if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_rawCounts_SKMEL5sublines+treatment.pdf", width = 20, height = 25)
+```
+
+
+### NOTE: This will overwrite objects with new data
+Normalized data from DESeq2
+```{r}
+normdata_Fer <- as.data.frame(assay(rld))[ferr_genes_4plots,]
+
+Fer_match <- colsplit(colnames(normdata_Fer), pattern = "_", names = c("Population", "Time", "Replicate"))
+Fer_plot <- cbind(Fer_match, t(normdata_Fer))
+Fer_melt <- melt(data = Fer_plot, id.vars = c("Population", "Time", "Replicate"), measure.vars = unique(colnames(Fer_plot))[4:42])
+Fer_dat <- Rmisc::summarySE(Fer_melt, measurevar = "value", groupvars = c("Population", "Time", "variable"))
+Fer_dat$Time <- as.numeric(gsub("[^[:digit:]]","",Fer_dat$Time))
+```
+
+### Remove excluded genes
+```{r}
+Fer_dat <- Fer_dat[!Fer_dat$variable %in% excl_genes,]
+```
+
+### Plot change over time of BRAFi for each subclone
+Changed plotting from linear to log2 scale for better visualization of changes.
+```{r fig.height=25, fig.width=20}
+Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=value, group = interaction(variable, Population))) + 
+  geom_line(linewidth=1.5, aes(color = Population)) + 
+  geom_point(size = 1.5, aes(color = Population)) + facet_wrap(~variable, ncol = 5, scales = "free") +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd, color = Population), width=.2, linewidth=1.5) +
+  theme_bw() + xlab("Time (days)") + ylab("Gene Counts") +
+  ggtitle("Ferroptosis gene signature") +
+  theme(legend.text = element_text(size = 10), legend.position = "right", 
+        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), axis.text=element_text(size=12),
+        legend.title = element_text(size=12,face="bold"),
+        axis.title=element_text(size=12,face="bold"))
+
+Fer_ggploted
+
+if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_normCounts_SKMEL5sublines+treatment.pdf", width = 20, height = 25)
+```
+
+
+```{r}
+# normdata_Fer
+samples <- c("SC01_day0", "SC01_day3", "SC01_day8", "SC07_day0", "SC07_day3", "SC07_day8", "SC10_day0", "SC10_day3", "SC10_day8")
+test <- sapply(samples, function(x) rowMeans(normdata_Fer[, grep(x, colnames(normdata_Fer))]))
+test <- as.data.frame(test[complete.cases(test),])
+
+
+
+allFC <- function(DEProc,startcol,endcol){ 
+  GE_fold <- DEProc[,-c(startcol:endcol)]
+  colvec <- colnames(DEProc)[startcol:endcol]
+  
+  #Last index is a self comparison and is removed
+  for(k in 1:(length(colvec)-1)){
+    #Start with column that is 1 away from index 
+    for(j in (k+1):length(colvec)){
+      compnam <- paste0(colvec[j],"/",colvec[k])
+      #Loop through each gene/row  
+      for(i in 1:nrow(DEProc)){
+        f <- DEProc[i,colvec[j]]
+        h <- DEProc[i,colvec[k]]
+        GE_fold[i, compnam] <- log2(f/h)
+     }
+    }
+  }
+
+  return(GE_fold)
+}
+
+GE_fold <- allFC(test, 1,9)
+ImpRat = c("SC01_day3/SC01_day0", "SC01_day8/SC01_day0", 
+           "SC07_day3/SC07_day0", "SC07_day8/SC07_day0", 
+           "SC10_day3/SC10_day0", "SC10_day8/SC10_day0")
+Imp_fold <- GE_fold[,ImpRat]
+
+Ferr <- read.delim("../data/KEGGFerroptosis_hsa04216_06-25-18.txt", header=T, stringsAsFactors = F)
+Ferr_fold <- Imp_fold[rownames(Imp_fold) %in% ferr_genes_4plots,]
+
+Ferr_fold$Gene <- rownames(Ferr_fold)
+
+# clean column names
+colnames(Ferr_fold) <- gsub("/SC[01][170]_day0","",colnames(Ferr_fold))
+```
+
+### 
+```{r}
+Ferr_fold_melt <- melt(Ferr_fold, id.vars = "Gene")
+Ferr_fold_melt$Gene <- factor(Ferr_fold_melt$Gene, levels = rev(ferr_genes_4plots))
+
+Ferr_fold_melt <- subset(Ferr_fold_melt, !Gene %in% excl_genes)
+```
+
+
+```{r fig.height=8, fig.width=8}
+myplot <- ggplot(Ferr_fold_melt, aes(variable, Gene, fill = value)) + 
+  geom_tile(color = "black") + theme_bw() +
+  scale_fill_gradientn(
+    colors=c("blue","white","red","red4"),
+    values=rescale(c(min(Ferr_fold_melt$value), 0, max(Ferr_fold_melt$value)/2, max(Ferr_fold_melt$value))),
+    limits=c(min(Ferr_fold_melt$value),max(Ferr_fold_melt$value)),
+    name = "Log2 Fold Change"
+  ) + ylab("") + xlab("") + 
+  theme(axis.text=element_text(size=10),
+        axis.text.x=element_text(angle = 90, hjust = 0),
+        axis.title=element_text(size=12),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
+
+myplot
+# if(SAVEPLOTS) ggsave("Ferroptosis_FCHM_selected_wide.pdf", width = 8, height = 8)
+```
+
+```{r fig.height=10, fig.width=8}
+par(mar=c(8,5,1,1), oma=c(3,1,0,0))
+dtp <- as.matrix(Ferr_fold[,1:6])
+dtp <- dtp[!rownames(dtp) %in% excl_genes,]
+colnames(dtp) <- gsub("day","D",colnames(dtp)) 
+mycolors <- colorRampPalette(c("darkblue","blue","white","red","red4"))(50)
+
+gplots::heatmap.2(dtp, dendrogram="none", scale="none", Rowv=FALSE, Colv=FALSE, trace="none", tracecol=NA,
+                  col=mycolors, srtCol=0, adjCol=0.5, colsep=c(2,4), offsetRow=-35, adjRow=c(1, 0.5),
+                  cexCol = 0.2 + 0.75/log10(ncol(dtp)), cex.lab=0.5,
+                  keysize=1, key.title=NA, key.ylab=NA, key.xlab="Log2 fold change", key.par=list(mar=c(6,3,5,1)))
+```
+
+### Gene annotations
+Manually assembled gene annotations.
+```
+annot <- c("Glutathione Metabolism",
+           "PUFA",
+           "Endosome Ferous Transfer",
+           "Ferroportin Export",
+           "Autolysosome Ferritin Storage",
+           "Ferric Acid Reduction",
+           "Heme Iron Transfer",
+           "Mitochondria")
+annot_col <- c("orange","yellow","green","turquoise","purple","red","brown",grey(0.5))
+```
+
+
+```{r}
+ferr_genes_annot <- read.csv("../data/ferroptosis_gene_annot.csv")
+ferr_genes_annot[ferr_genes_annot==""] <- NA
+annots <- unique(unlist(apply(ferr_genes_annot[,grep("annot",colnames(ferr_genes_annot))],2,unique)))
+annots <- annots[!is.na(annots)]
+annots_col <- c("yellow","purple",grey(0.5),"black","red","orange","green","turquoise","brown")
+names(annots_col) <- annots
+
+dat <- Ferr_fold[order(match(Ferr_fold$Gene,ferr_genes_annot$gene_name)),]
+
+fer <- list(genes=Ferr_fold$Gene, 
+            fold_exp=dat[,1:6], 
+            annot1=ferr_genes_annot[match(dat$Gene,ferr_genes_annot$gene_name),"annot1"],
+            annot2=ferr_genes_annot[match(dat$Gene,ferr_genes_annot$gene_name),"annot2"]
+            )
+```
+
+
+
+## Using `ComplexHeatmap()`
+
+```{r fig.height=8, fig.width=8}
+if(SAVEPLOTS)
+    pdf("Ferroptosis_heatmap_annot.pdf", width = 8, height = 8)
+
+ht_opt(
+    legend_title_gp = gpar(fontsize = 8, fontface = "bold"), 
+    legend_labels_gp = gpar(fontsize = 8), 
+    heatmap_column_names_gp = gpar(fontsize = 8),
+    heatmap_column_title_gp = gpar(fontsize = 10),
+    heatmap_row_title_gp = gpar(fontsize = 8)
+)
+
+ht_list = Heatmap(as.matrix(fer$fold_exp), name = "Log2 fold expression",
+                  width = unit(8, "cm"), 
+                  cluster_rows = FALSE, cluster_columns = FALSE,
+                  row_names_side = "left", row_names_gp = gpar(fontsize = 8)) +
+    Heatmap(fer$annot1, name = "GO:1", col = annots_col, width = unit(5, "mm")) + 
+    Heatmap(fer$annot2, name = "GO:2", col = annots_col, width = unit(5, "mm"))
+
+ht_list
+```
+
+
