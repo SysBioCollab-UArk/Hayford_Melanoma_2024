@@ -30,18 +30,18 @@
 
 - #### <ins>SUPPLEMENTARY FIGURES</ins>
 
-  - #### <ins>FIGURE S1</ins>
+  - #### <ins>FIGURE S1</ins>:
 
     xxx
 
-  - #### <ins>FIGURE S2</ins>
+  - #### <ins>FIGURE S2</ins>:
 
     xxx
 
-  - #### <ins>FIGURE S3</ins>
+  - #### <ins>FIGURE S3</ins>:
 
     xxx
 
-  - #### <ins>FIGURE S4</ins>
+  - #### <ins>FIGURE S4</ins>:
 
     xxx
