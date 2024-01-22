@@ -17,7 +17,7 @@ require(Rmisc) # needed for summarySE()
 
 ### Define global variables
 ```{r}
-SAVEPLOTS <- FALSE  # whether to save plots as PDF files
+SAVEPLOTS <- TRUE  # whether to save plots as PDF files
 ```
 
 
@@ -245,28 +245,32 @@ IC50_df$drug2 <- ifelse(IC50_df$drug2=="No","Control","Ferrostatin-1")
 ```
 
 
-```{r Generate plots, fig.height=6, fig.width=3, warning=FALSE}
+```{r Generate plots, fig.height=5, fig.width=3.5, warning=FALSE}
+plot_labels <- c("Control" = "+RSL3", "Ferrostatin-1" = "+RSL3 + Fer-1")
+
 ggplot(RSL3_UTvI_all, aes(x=conc, y=p, color=State, fill=State)) +
-  facet_wrap(~drug2, ncol=1) +
+  facet_wrap(~drug2, ncol=1, labeller = labeller(drug2 = plot_labels)) +
   geom_ribbon(aes(ymin=pmin, ymax=pmax), alpha=0.2, color = NA) +
   geom_line(linewidth = 1) +
-  geom_vline(data = IC50_df, aes(xintercept = IC50, color = State), linetype = "dashed", linewidth = 0.75) +
+  geom_vline(data = IC50_df, aes(xintercept = IC50, color = State), linetype = "dashed", linewidth = 0.75,
+             show.legend=FALSE) +
   geom_hline(yintercept = 0, color = grey(0.75), linetype = "solid", linewidth = 0.5) +
   scale_x_log10() +
   xlab("[RSL3] (µM)") + ylab("DIP Rate") +
   theme_bw() + 
-  scale_color_manual(values = c("red", "blue")) +
-  scale_fill_manual(values = c("red", "blue")) + 
-  geom_text(data = IC50_df[IC50_df$State=="Idling",], aes(x = IC50, y=-0.04, label = paste(signif(IC50,2),"µM"), color = State, text.size=6), nudge_x=-.3) +
-  geom_text(data = IC50_df[IC50_df$State!="Idling",], aes(x = IC50, y=-0.04, label = paste(signif(IC50,2),"µM"), color = State, text.size=6), nudge_x=.3) +
+  scale_color_manual(name=NULL, values = c("red", "blue"), labels = c("untreated", "idling DTP")) +
+  scale_fill_manual(name=NULL, values = c("red", "blue"), labels = c("untreated", "idling DTP")) + 
+  geom_text(data = IC50_df[IC50_df$State=="Idling",], aes(x = IC50, y=-0.04, label = paste(signif(IC50,2),"µM"), color = State, text.size=6), nudge_x=-0.05, show.legend = FALSE, hjust=1) +
+  geom_text(data = IC50_df[IC50_df$State!="Idling",], aes(x = IC50, y=-0.04, label = paste(signif(IC50,2),"µM"), color = State, text.size=6), nudge_x=0.05, show.legend = FALSE, hjust=0) +
   theme(legend.text = element_text(size = 8), 
+        legend.margin=margin(t = 0, unit='cm'),
         plot.title = element_text(size = 14, hjust = 0.5), 
         axis.text=element_text(size=12),
         legend.title = element_text(size=8),
-        legend.position = "top",
+        legend.position = c(0.75,0.93),
         axis.title=element_text(size=12),
         panel.grid = element_blank())
 
-if(SAVEPLOTS)   ggsave("RSL3-all_DRC_2024.pdf", width = 3, height = 6)
+if(SAVEPLOTS)   ggsave("RSL3-all_DRC_2024.pdf")
 ```
 
