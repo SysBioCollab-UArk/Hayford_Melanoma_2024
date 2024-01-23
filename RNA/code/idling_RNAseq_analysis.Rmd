@@ -1,0 +1,565 @@
+---
+title: "SKMEL5 subclone BRAFi timecourse analysis"
+author: "Darren R. Tyson"
+date: January 16, 2022
+output: html_notebook
+---
+### This file used code from several other files as reference, including:  
+1. [ion_channel_initial_list.Rmd](ion_channel_initial_list.Rmd) from Philip Stauffer
+1. [DESeq2_subclones_timeCourse.Rmd](DESeq2_subclones_timeCourse.Rmd) from Corey Hayford
+
+### Summary
+This is a pipeline for differential analysis of RNASeq data from SKMEL5 sublines using DESeq2 statistical package. Three sublines: SC01 (*regressing*), SC07 (*stationary*) and SC10 (*expanding*) were analyzed for gene expression differences. In addition, time course changes in 8uM PLX4720 were also performed for each subline. Time points are: 0, 3d, 8d. The differential analysis will be performed based on the contrasts defined below. 
+General steps for the analysis are:
+  
+###1. Read counts table: 
++ Could be read directly as a csv/txt file. 
++ Alignment and read counts could be done within R environment to create read counts table. 
+1. Define working directory, load the required libraries. 
+2. Get read counts table. 
+Read the raw counts file processed by featureCounts. The fastq files were aligned with HiSat2, and the read counts were obtained using featureCounts of Rsubread packages.
+
+```{r Setup}
+library(reshape2)
+library(ggplot2)
+library(plyr)
+library(gplots)
+library(Rmisc)
+library(biomaRt)
+
+# This file found at https://github.com/RyanHope/Rmisc/blob/master/R/summarySE.R
+# source("summarySE.R")
+
+SAVEPLOT  <- FALSE
+OVERWRITE <- FALSE
+```
+
+
+### Assembling data to include gene HGNC symbols as names
+This only needs to be run once to generate the proper data matrix for further analysis.
+```{r Data assembly, eval=FALSE, include=TRUE, echo=TRUE}
+
+
+ensembl <- useMart( biomart="ensembl",
+                    dataset="hsapiens_gene_ensembl",
+                    host="https://useast.ensembl.org")
+mart <- useDataset("hsapiens_gene_ensembl", mart= ensembl, verbose= FALSE)
+
+d <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=',')
+
+#Rename columns
+cols <- c("ensembl_gene_id", "SC01_day0_rep1", "SC01_day0_rep2", "SC01_day0_rep3",
+          "SC01_day3_rep1", "SC01_day3_rep2", "SC01_day3_rep3",
+          "SC01_day8_rep1", "SC01_day8_rep2", "SC01_day8_rep3",
+          "SC07_day0_rep1", "SC07_day0_rep2", "SC07_day0_rep3",
+          "SC07_day3_rep1", "SC07_day3_rep2", "SC07_day3_rep3",
+          "SC07_day8_rep1", "SC07_day8_rep2", "SC07_day8_rep3",
+          "SC10_day0_rep1", "SC10_day0_rep2", "SC10_day0_rep3",
+          "SC10_day3_rep1", "SC10_day3_rep2", "SC10_day3_rep3",
+          "SC10_day8_rep1", "SC10_day8_rep2", "SC10_day8_rep3")
+names(d) <- cols
+ensembl_gene_id <- d$ensembl_gene_id
+gene_list <- getBM(attributes= c("ensembl_gene_id", "hgnc_symbol"),
+                filters="ensembl_gene_id",
+                values=ensembl_gene_id,
+                mart=mart)
+
+d <- merge(d, gene_list, by="ensembl_gene_id")
+
+# remove ensembl gene IDs
+d <- d[, -1]
+
+# make rownames from HGNC gene names
+rownames(d) <- make.names(d$hgnc_symbol, unique = T)
+
+# remove hgnc_symbol
+d$hgnc_symbol <- NULL
+
+# remove genes with <5 counts in all samples
+d <- d[apply(d, 1, function(x) all(x > 5)),]
+
+# write the data to a new file
+fn <- "../data/SKMEL5_subclone_BRAFi_timecourse_RNAseq_data.csv"
+if(!file.exists(fn) | OVERWRITE) write.csv(d, fn)
+```
+
+### Load data
+```{r}
+d <- read.csv("../data/SKMEL5_subclone_BRAFi_timecourse_RNAseq_data.csv", row.names=1)
+```
+
+### Convert data to ExpressionSet
+This will allow better annotations of samples and genes. First, prepare reusable sample information. This can also be used outside of expressionSet.
+```{r Sample info}
+sample_info <- as.data.frame(do.call(rbind, strsplit(colnames(d), "_")))
+colnames(sample_info) <- c("subclone", "time_days", "rep")
+rownames(sample_info) <- colnames(d)
+
+sample_info$time_days <- as.integer(gsub("day","",sample_info$time_days))
+sample_info$rep <- as.integer(gsub("rep","",sample_info$rep))
+sample_info$uid <- paste(sample_info$subclone, sample_info$time_days, sep="_")
+head(sample_info)
+```
+
+
+```{r}
+SUBCLONES <- unique(sapply(strsplit(colnames(d), "_"), "[[", 1))
+ALLGENES <- sort(unique(rownames(d)))
+
+gene_sets <- list(Kv7=c("KCNQ1", "KCNQ2" , "KCNQ3", "KCNQ4" , "KCNQ5"),
+                  musc=c("CHRM1", "CHRM2", "CHRM3", "CHRM4", "CHRM5"),
+                  gaba=c("GABRG1", "GABRG2", "GABGRD"),
+                  Glut=c("GRID2", "GRIN2B" , "GRIN1"),
+                  TRP=c("TRPM6", "TRPV6", "TRPC7" , "TRPC3"),
+                  NaKATPase=c("ATP1A3" , "ATP1A4" , "ATP1B1" , "ATP1B2", "ATP2A3"),
+                  RYR= c("RYR1" , "RYR2" , "RYR3"),
+                  serca= c("ATP2A1" , "ATP2A2" , "ATP2A3"),
+                  PMCA= c("ATP2B1" , "ATP2B2" , "ATP2B3" , "ATP2B4"),
+                  orai= c("ORAI1" , "ORAI2" , "ORAI3"),
+                  stim= c("STIM1","STIM2"),
+                  VGCC=c(rownames(d)[grep("CACNA1",rownames(d))],"CACNA2D2")
+                  )
+
+```
+### Descriptions of gene classes
+#### Classes  
+
+* *PMCA*: Plasma membrane calcium ATPases; Ca++ pumps to EC space
+* *orai*: 
+* *stim*: 
+* *VGCC*: voltage-gated calcium channel
+* *TRP*: transient receptor potential cation channel family
+
+
+### Functions to summarize data (average across replicates) and plot
+```{r}
+summarize_dat <- function(...) summarySE(..., measurevar = "value", 
+                                         groupvars = c("subclone", "time_days", "variable"))
+
+prep_dat <- function(x=d, gene_name, log_scale=TRUE)
+{
+    genes <- gene_name[gene_name %in% rownames(x)]
+    dat <- t(x[genes,])
+    if(log_scale) dat <- log2(dat+1)
+    dtp <- cbind(sample_info, dat)
+    z <- melt(data = dtp, id.vars = c("subclone", "time_days"), measure.vars = genes)
+    z <- summarize_dat(data=z)
+    colnames(z)[colnames(z)=="variable"] <- "gene"
+    return(z)
+}
+
+plot_timecourse <- function(dtp, plot_title="Gene expression timecourse", savefilename=NULL)
+{
+    genes <- unique(dtp$gene)
+    myplot <- ggplot(dtp, aes(x=time_days, y=value, group = interaction(gene, subclone))) + 
+        geom_line(linewidth=1, aes(color = subclone, linetype = gene)) + 
+        geom_point(size = 1.5, aes(color = subclone)) +
+        geom_errorbar(aes(ymin=value-sd, ymax=value+sd, color = subclone), width=.2, size=1.5) + 
+        theme_bw() + xlab("Time (days)") + ylab("Transcript count") + 
+        ggtitle(plot_title) + 
+        theme(legend.text = element_text(size = 10), legend.position = "right", 
+              plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
+              axis.text=element_text(size=12), 
+              legend.title = element_text(size=12,face="bold"),
+              axis.title=element_text(size=12,face="bold"))
+    if(!is.null(savefilename)) ggsave(savefilename, width = 6, height = 4)
+    return(myplot)
+}
+```
+
+### Neural potassium channels
+```{r}
+savefilename <- if(SAVEPLOT) { "Neural_potassium_channels.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=gene_sets[["Kv7"]], log_scale=TRUE), 
+                plot_title="Neural potassium channels", 
+                savefilename=savefilename)
+```
+
+### Voltage-gated calcium channels
+```{r}
+savefilename <- if(SAVEPLOT) { "Voltage-gated_calcium_channels.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=gene_sets[["VGCC"]]), 
+                plot_title="Voltage-gated calcium channels", 
+                savefilename=savefilename)
+```
+
+### IP3 receptors
+```{r}
+savefilename <- if(SAVEPLOT) { "IP3_receptors.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=c("ITPR2","ITPR3"), log_scale=TRUE), 
+                plot_title="IP3 receptors", 
+                savefilename=savefilename)
+```
+
+
+### My gene set based on differential expression and role in calcium signaling
+```{r}
+calc_genes <- c("ATP2B2","RASEF","SYTL5","CACNA2D2")
+
+savefilename <- if(SAVEPLOT) { "Calcium_related_genes.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=calc_genes, log_scale=TRUE), 
+                plot_title="Calcium-related genes", 
+                savefilename=savefilename)
+```
+### NFAT genes
+Calcium-dependent transcription factors (regulated by calcineurin).
+```{r}
+other_genes <- c(rownames(d)[grep("NFATC[1-4]$",rownames(d))])
+
+savefilename <- if(SAVEPLOT) { "Calcium_related_genes.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=other_genes, log_scale=TRUE), 
+                plot_title="Calcium-related genes", 
+                savefilename=savefilename)
+```
+
+MCOLN1 = TRPML1 gene
+
+```{r}
+trpm348l1 <- c(rownames(d)[grep("^TRPM[3478]",rownames(d))],"MCOLN1")
+
+savefilename <- if(SAVEPLOT) { "TRPM_channels.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=trpm348l1, log_scale=TRUE), 
+                plot_title="TRPM channels", 
+                savefilename=savefilename)
+```
+
+Reduction of TRPM4 (~2-fold) and TRPM8 (~8-fold) expression in idling
+
+```{r}
+mitf_targets <- c("TRPM1","EDNRB","MITF")
+savefilename <- if(SAVEPLOT) { "MITF_targets.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=mitf_targets, log_scale=TRUE), 
+                plot_title="MITF target genes", 
+                savefilename=savefilename)
+```
+TRPM1 and EDNRB are both induce ~4-fold (2^2) after 8 days of BRAFi (in idling), even though MITF expression remains relatively stable.
+
+
+```{r}
+
+```
+
+
+Related to this paper:
+Tasdogan, A., Faubert, B., Ramesh, V., Ubellacker, J. M., Shen, B., Solmonson, A., Murphy, M. M., Gu, Z., Gu, W., Martin, M., Kasitinon, S. Y., Vandergriff, T., Mathews, T. P., Zhao, Z., Schadendorf, D., DeBerardinis, R. J., & Morrison, S. J. (2020). Metabolic heterogeneity confers differences in melanoma metastatic potential. Nature, 577(7788), 115-120. https://doi.org/10.1038/s41586-019-1847-2
+
+MCT1, MCT2, and MCT4 genes for transporting lactate.
+
+
+```{r}
+slc16a_transporters <- c(rownames(d)[grep("^SLC16A[137]",rownames(d))])
+savefilename <- if(SAVEPLOT) { "SLC16A_transporters.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=slc16a_transporters, log_scale=TRUE), 
+                plot_title="Lactate transporter genes", 
+                savefilename=savefilename)
+```
+
+
+
+The effects of BRAFi on gene expression appear minimal.
+
+
+```{r}
+temp <- c("ORAI1","ORAI3","STIM1")
+# temp <- c("ATP2B4")
+
+savefilename <- if(SAVEPLOT) { "temp_genes.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=temp, log_scale=TRUE), 
+                plot_title="Misc genes", 
+                savefilename=savefilename)
+```
+
+### Assemble data of most important gene expression changes
+
+Relevant refs:
+Hegedũs, L., Garay, T., Molnár, E., Varga, K., Bilecz, Á., Török, S., Padányi, R., Pászty, K., Wolf, M., Grusch, M., Kállay, E., Döme, B., Berger, W., Hegedũs, B., & Enyedi, A. (2017). The plasma membrane Ca^2+^ pump PMCA4b inhibits the migratory and metastatic activity of BRAF mutant melanoma cells. Int J Cancer, 140(12), 2758-2770. https://doi.org/10.1002/ijc.30503  
+Gene is ATP2B4
+
+Genes to include:  
+
+1. IP3 receptors: *ITPR2*, *ITPR3*
+1. voltage-gated calcium channel: *CACNA1H*
+1. Plasma membrane calcium pump: *ATP2B4*, aka PMCA4b
+1. calcium channel: *TRPM8* (MITF reporter), high levels inhibit prolif in PCa; *TRPM1* aka melanostatin, melanoma metastasis suppressor gene (note miR-211 is controlled by the same promoter; both are MITF target genes)
+1. PPARgamma: *PPARGC1A*
+1. ER-regulated calcium channels: *ORAI1*, *ORAI3*, *STIM1*
+1. Other melanocytic differentiation genes: *MLANA*, *TYR*, *TYRP1*
+1. Drug resistance-associated genes: *AXL*, *NTRK1*, *CDH2*, *TNFRSF1A*
+1. MAPK-responsive genes: *POU3F2*
+
+https://doi.org/10.1158/0008-5472.can-08-1053  
+The Brn-2 transcription factor (POU3F2) regulates proliferation and invasiveness and lies downstream from mitogen-activated protein kinase (MAPK) and Wnt/β-catenin, two melanoma-associated signaling pathways
+
+
+```{r}
+temp <- c("PPARGC1A","TYRP1")
+# temp <- c("AXL","NGFR","CDH2","TNFRSF1A")
+
+# minimally or unchanged: ,"MLANA","TYR","NGFR","PAX3"
+# not present: "TYRP2","MART1","SOX10"
+# somewhat downregulated: "TBX2","MC1R"
+
+savefilename <- if(SAVEPLOT) { "temp_genes.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=temp, log_scale=TRUE), 
+                plot_title="Misc genes", 
+                savefilename=savefilename)
+```
+
+
+```{r}
+temp <- c("POU3F2","SOX10","PAX3","CREB1","PMEL","TFEB","VDAC1")
+
+savefilename <- if(SAVEPLOT) { "temp_genes.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=temp, log_scale=TRUE), 
+                plot_title="Misc genes", 
+                savefilename=savefilename)
+```
+
+```{r}
+temp <- c("CASR","ABCB1","ABCG2","KDM5B","MYC")
+
+savefilename <- if(SAVEPLOT) { "temp_genes.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=temp, log_scale=TRUE), 
+                plot_title="Misc genes", 
+                savefilename=savefilename)
+```
+
+
+
+
+Calcium homeostasis genes
+http://purl.obolibrary.org/obo/GO_0006874
+GO:0051480
+
+```{r}
+ensembl <- useMart( biomart="ensembl",
+                    dataset="hsapiens_gene_ensembl",
+                    host="https://useast.ensembl.org")
+mart <- useDataset("hsapiens_gene_ensembl", mart= ensembl, verbose= FALSE)
+
+m <- getBM(attributes = c('ensembl_gene_id','external_gene_name', 'hgnc_symbol','name_1006'), 
+      filters = 'go', 
+      values = 'GO:0006874', 
+      mart = ensembl)
+```
+### Extract gene names into `ca_sig` object
+Filter for gene names in data. Keep track of which ones weren't present.
+```{r}
+ca_sig <- unique(m$hgnc_symbol)
+missing_genes <- ca_sig[!ca_sig %in% ALLGENES]
+ca_sig <- ca_sig[ca_sig %in% ALLGENES]
+
+message("Genes in signature missing from data:")
+print(missing_genes)
+```
+
+### Other calcium-relevant genes
+```{r}
+to_add <- c(rownames(d)[grep("^TRPM",rownames(d))],"MCOLN1")
+to_add <- append(to_add, rownames(d)[grep("^ITPR[1-3]$",rownames(d))])
+to_add <- append(to_add, rownames(d)[grep("^ORAI",rownames(d))])
+ca_sig <- unique(union(ca_sig,to_add))
+```
+
+
+```{r warning=FALSE}
+ca_dat <- as.matrix(d[rownames(d) %in% ca_sig,])
+ca_dat <- data.frame(gene_name=rep(ca_sig),gene_count=as.integer(ca_dat))
+ca_dat$sample <- rep(colnames(d), each=length(ca_sig))
+temp <- cbind(ca_dat, sample_info[ca_dat$sample,c("subclone","time_days","rep")])
+temp$uid <- paste(temp$subclone, temp$time_days, temp$gene_name, sep="_")
+temp <- temp[order(temp$uid,temp$rep),]
+rownames(temp) <- NULL
+temp$l2 <- log2(temp$gene_count+1)
+
+a <- aggregate(l2 ~ uid, data=temp, FUN=mean)
+a$subclone <- sapply(strsplit(a$uid,"_"), "[[", 1)
+a$day <- as.integer(sapply(strsplit(a$uid,"_"), "[[", 2))
+a$gene <- sapply(strsplit(a$uid, "_"), "[[", 3)
+a$sc_gene <- paste(a$subclone, a$gene, sep="_")
+a <- a[order(a$gene,a$subclone,a$day),]
+a$change <- NA
+for(x in unique(a$sc_gene))
+    a[a$sc_gene==x,"change"] <- a[a$sc_gene==x,"l2"] - a[a$sc_gene==x,"l2"][1]
+
+# remove day 0 (reference)
+# b <- a[a$day!=0,]
+
+# b <- as.data.frame(t(matrix(b$change, nrow=6)))
+# colnames(b) <- apply(a[a$day!=0,][1:6,c("subclone","day")], 1, function(x) paste(x,collapse="_"))
+b <- as.data.frame(t(matrix(a$change, nrow=9)))
+colnames(b) <- apply(a[1:9,c("subclone","day")], 1, function(x) paste(x,collapse="_"))
+rownames(b) <- unique(a$gene)
+b <- b[order(apply(b, 1, function(x) max(x)), decreasing = TRUE), ]
+```
+
+
+```{r fig.height=4, fig.width=3}
+if(SAVEPLOT) 
+    pdf(file="~/Desktop/ca-genes_fold-change_heatmap.pdf", height=6, width=4)
+heatmap.2(as.matrix(b), Rowv=FALSE, Colv=FALSE, dendrogram="none",
+          scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
+          col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
+          density.info = "none",
+          keysize = 1,
+          key.par=list(mgp=c(1.5, 0.5, 0), mar=c(2.5, 2.5, 1, 0)),
+          key.xtickfun=function() {
+                 breaks <- parent.frame()$breaks
+                 return(list(
+                      at=parent.frame()$scale01(c(breaks[1], 0,
+                                                  breaks[length(breaks)])),
+                      labels=c(as.character(signif(breaks[1],2)), "0",
+                               as.character(signif(breaks[length(breaks)],2)))
+                 ))}
+          )
+
+```
+
+
+Remove 0 time point columns and replot; also adjusted first argument in `mar` in `key.par` to be 6 (spacing above plot to bottom of color key). 
+```{r fig.height=6, fig.width=4}
+if(SAVEPLOT) 
+    pdf(file="~/Desktop/ca-genes_fold-change_heatmap.pdf", height=6, width=4)
+heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]), Rowv=FALSE, Colv=FALSE, dendrogram="none",
+          scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
+          col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
+          density.info = "none",
+          keysize = 0.75,
+          key.par=list(mgp=c(1, 0.5, 0), mar=c(4.5, 1, 1, 0)),
+          key.xtickfun=function() {
+                 breaks <- parent.frame()$breaks
+                 return(list(
+                      at=parent.frame()$scale01(c(breaks[1], 0,
+                                                  breaks[length(breaks)])),
+                      labels=c(as.character(signif(breaks[1],2)), "0",
+                               as.character(signif(breaks[length(breaks)],2)))
+                 ))}
+          )
+
+```
+
+```{r}
+# temp <- c("MITF","TFEB","TFE3)
+temp <- c("ETV5","ETV1","ETV4")
+
+savefilename <- if(SAVEPLOT) { "temp_genes.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=temp, log_scale=TRUE), 
+                plot_title="Misc genes", 
+                savefilename=savefilename)
+```
+
+```{r}
+temp <- c("MITF","TFEB","TYRP1","ATF4")
+# temp <- c("ETV5","ETV1","ETV4")
+
+savefilename <- if(SAVEPLOT) { "temp_genes.pdf" } else { NULL }
+plot_timecourse(prep_dat(gene_name=temp, log_scale=TRUE), 
+                plot_title="Misc genes", 
+                savefilename=savefilename)
+```
+
+### Preparation of data for heatmaps of ANY gene set
+
+```{r}
+GENE_LIST <- c("MITF","TFEB","ETV1","ETV4","ETV5","POU3F2","SLC24A5") # add all relevant genes to this object
+```
+
+
+```{r Reformat data fxn}
+refmtData <- function(dat=d, genes=GENE_LIST)
+{
+    avail_genes <- genes[genes %in% rownames(dat)]
+    new_dat <- as.matrix(dat[avail_genes,])
+    new_dat <- data.frame(gene_name=rep(avail_genes),gene_count=as.integer(new_dat))
+    new_dat$sample <- rep(colnames(dat), each=length(avail_genes))
+    
+    temp <- cbind(new_dat, sample_info[new_dat$sample,c("subclone","time_days","rep")])
+    temp$uid <- paste(temp$subclone, temp$time_days, temp$gene_name, sep="_")
+    temp <- temp[order(temp$uid,temp$rep),]
+    rownames(temp) <- NULL
+    temp$l2 <- log2(temp$gene_count+1)
+    
+    a <- aggregate(l2 ~ uid, data=temp, FUN=mean)
+    a$subclone <- sapply(strsplit(a$uid,"_"), "[[", 1)
+    a$day <- as.integer(sapply(strsplit(a$uid,"_"), "[[", 2))
+    a$gene <- sapply(strsplit(a$uid, "_"), "[[", 3)
+    a$sc_gene <- paste(a$subclone, a$gene, sep="_")
+    a <- a[order(a$gene,a$subclone,a$day),]
+    a$change <- NA
+    for(x in unique(a$sc_gene))
+        a[a$sc_gene==x,"change"] <- a[a$sc_gene==x,"l2"] - a[a$sc_gene==x,"l2"][1]
+    
+    my_ncol <- ncol(dat)/max(temp$rep)
+    b <- as.data.frame(t(matrix(a$change, nrow=my_ncol)))
+    colnames(b) <- apply(a[seq(my_ncol),c("subclone","day")], 1, function(x) paste(x,collapse="_"))
+    rownames(b) <- unique(a$gene)
+    b <- b[order(apply(b, 1, function(x) max(x)), decreasing = TRUE), ]
+    return(b)
+}
+
+```
+
+
+```{r eval=FALSE}
+z <- refmtData(genes=ALLGENES)
+if(SAVEFILES) write.csv(z, "~/Desktop/SKMEL5_subclone_BRAFi_l2FC_d3and8.csv")
+```
+
+```{r}
+mygenes <- c(rownames(d)[grep("TRPM",rownames(d))],
+             rownames(d)[grep("^ITPR[2-3]$",rownames(d))],
+             rownames(d)[grep("^RYR",rownames(d))],
+             rownames(d)[grep("^ORAI",rownames(d))],
+             rownames(d)[grep("^STIM[12]",rownames(d))],
+             "ATP2B4","PPARGC1A","TYR","TYRP1","DCT","MLANA","TPCN2",
+             "MITF","TFEB","TFE3","TFEC",
+             rownames(d)[grep("^CACNA1",rownames(d))]
+             )
+
+z <- refmtData(genes=mygenes)
+```
+
+```{r}
+if(SAVEPLOT) 
+    pdf(file="~/Desktop/mygenes_fold-change_heatmap.pdf", height=3, width=5)
+
+heatmap.2(as.matrix(z), Rowv=FALSE, Colv=FALSE, dendrogram="none",
+          scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
+          col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
+          density.info = "none",
+          keysize = 1,
+          key.par=list(mgp=c(1.5, 0.5, 0), mar=c(2.5, 2.5, 1, 0)),
+          key.xtickfun=function() {
+                 breaks <- parent.frame()$breaks
+                 return(list(
+                      at=parent.frame()$scale01(c(breaks[1], 0,
+                                                  breaks[length(breaks)])),
+                      labels=c(as.character(signif(breaks[1],2)), "0",
+                               as.character(signif(breaks[length(breaks)],2)))
+                 ))}
+          )
+```
+Drop 0 time point columns and replot
+```{r}
+z <- z[,!grepl("_0",colnames(z))]
+
+if(SAVEPLOT) 
+    pdf(file="~/Desktop/mygenes_fold-change_heatmap.pdf", height=3, width=5)
+
+heatmap.2(as.matrix(z), Rowv=FALSE, Colv=FALSE, dendrogram="none",
+          scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
+          col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
+          density.info = "none",
+          keysize = 1,
+          key.par=list(mgp=c(1.5, 0.5, 0), mar=c(2.5, 2.5, 1, 0)),
+          key.xtickfun=function() {
+                 breaks <- parent.frame()$breaks
+                 return(list(
+                      at=parent.frame()$scale01(c(breaks[1], 0,
+                                                  breaks[length(breaks)])),
+                      labels=c(as.character(signif(breaks[1],2)), "0",
+                               as.character(signif(breaks[length(breaks)],2)))
+                 ))}
+          )
+```
+
