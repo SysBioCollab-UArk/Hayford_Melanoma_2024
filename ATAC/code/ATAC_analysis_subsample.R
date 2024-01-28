@@ -15,6 +15,10 @@ library(DT)
 library(dplyr)
 library(tidyr)
 
+if (Sys.getenv("RSTUDIO") == "1") {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
+
 blkList <- import.bed("../data/ENCFF356LFX.bed.gz")
 chrs <- c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8",
           "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
@@ -185,21 +189,21 @@ plotAnnoBar(peakAnnoList) +
   theme(legend.text = element_text(size = 12), legend.position = "right", 
         plot.title = element_text(size = 14, hjust = 0.5), axis.text=element_text(size=12),
         legend.title = element_text(size=12), axis.title=element_text(size=12),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  ggsave("ATAC_sub25_annotationDistribution_UniqueShared.pdf", width = 8, height = 6)
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+ggsave("ATAC_sub25_annotationDistribution_UniqueShared.pdf", width = 8, height = 6)
 
 
 plotDistToTSS(peakAnnoList) +
   theme(legend.text = element_text(size = 12), legend.position = "right", 
         plot.title = element_text(size = 14, hjust = 0.5), axis.text=element_text(size=12),
         legend.title = element_text(size=12), axis.title=element_text(size=12),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  ggsave("ATAC_sub25_distanceToTSS_UniqueShared.pdf", width = 8, height = 6)
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+ggsave("ATAC_sub25_distanceToTSS_UniqueShared.pdf", width = 8, height = 6)
 
 tagMatrixList <- lapply(files, getTagMatrix, windows=promoter)
 plotAvgProf(tagMatrixList, xlim=c(-3000, 3000)) +
   theme(legend.text = element_text(size = 12), legend.position = "right",
         plot.title = element_text(size = 14, hjust = 0.5), axis.text=element_text(size=12),
         legend.title = element_text(size=12), axis.title=element_text(size=12),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  ggsave("ATAC_sub25_averageBindingProfile_UniqueShared.pdf", width = 6, height = 4)
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+ggsave("ATAC_sub25_averageBindingProfile_UniqueShared.pdf", width = 6, height = 4)
