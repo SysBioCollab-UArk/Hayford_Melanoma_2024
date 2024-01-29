@@ -21,7 +21,7 @@ General steps for the analysis are:
 Read the raw counts file processed by featureCounts. The fastq files were aligned with HiSat2, and the read counts were obtained using featureCounts of Rsubread packages.
 
 ```{r Installation, eval=FALSE}
-pkgs <- c("DESeq2","org.Hs.eg.db","clusterProfiler","HDO.db",
+pkgs <- c("BiocManager","DESeq2","org.Hs.eg.db","clusterProfiler","HDO.db",
           "pheatmap","ggnewscale","PoiClaClu","enrichR","gtable","Rmisc")
 source("getReqdPkgs.r")
 getReqdPkgs(pkgs)
@@ -42,13 +42,14 @@ suppressPackageStartupMessages(expr={
     library(clusterProfiler)
     library("RColorBrewer")
     library(enrichR)
+    library(biomaRt)
+    library(Rmisc)
 })
 
 SAVEFILES <- FALSE
 ```
 
 ```{r, echo=TRUE}
-library(biomaRt)
 d <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=",")
 
 #Rename columns
@@ -62,7 +63,7 @@ cols <- c("ensembl_gene_id", "SC01_day0_rep1", "SC01_day0_rep2", "SC01_day0_rep3
           "SC10_day3_rep1", "SC10_day3_rep2", "SC10_day3_rep3",
           "SC10_day8_rep1", "SC10_day8_rep2", "SC10_day8_rep3")
 names(d) <- cols
-ensembl <- useMart("ensembl")
+ensembl <- useEnsembl("ensembl", mirror="useast")
 mart <- useDataset("hsapiens_gene_ensembl", mart = ensembl)
 genes <- d$ensembl_gene_id
 G_list <- getBM(attributes= c("ensembl_gene_id","hgnc_symbol"),
@@ -81,10 +82,17 @@ d <- d[apply(d, 1, function(x) all(x > 5)),]
 
 
 countdata <- d
-
+# baseline <- c(1,2,3,10,11,12,19,20,21)
+# treat3d  <- c(4,5,6,13,14,15,22,23,24)
+# treat8d  <- c(7,8,9,16,17,18,25,26,27)
+# # define the groups by subclones
+# sc01 <- c(baseline[1:3], treat3d[1:3], treat8d[1:3])
+# sc07 <- c(baseline[4:6], treat3d[4:6], treat8d[4:6])
+# sc10 <- c(baseline[7:9], treat3d[7:9], treat8d[7:9])
+# # Get the countdata specific to conditions: 
+# # countdata <- countdata[,c(baseline)] 
+# rownames(countdata) <- d[,"ensembl_gene_id"]
 head(countdata)
-nrow(countdata)
-ncol(countdata)
 ```
 
 ### Identifying different ion channel gene lists
@@ -106,7 +114,7 @@ countdata_glut = countdata[c("GRM1", "GRM2", "GRM3", "GRM4", "GRM5",
 IPs_match = colsplit(colnames(countdata_IPs), pattern = "_", names = c("Population", "Time", "Replicate"))
 IPs_plot = cbind(IPs_match, t(countdata_IPs))
 IPs_melt = melt(data = IPs_plot, id.vars = c("Population", "Time", "Replicate"), measure.vars = c("ITPR1", "ITPR2", "ITPR3"))
-IPs_dat = RMisc::summarySE(IPs_melt, measurevar = "value", groupvars = c("Population", "Time", "variable"))
+IPs_dat = Rmisc::summarySE(IPs_melt, measurevar = "value", groupvars = c("Population", "Time", "variable"))
 IPs_dat$Time = as.numeric(gsub("[^[:digit:]]","",IPs_dat$Time))
 IPs_dat_sub = subset(IPs_dat, variable %in% c("ITPR2","ITPR3"))
 IPs_ggploted <- ggplot(IPs_dat_sub, aes(x=Time, y=value, group = interaction(variable, Population))) + geom_line(size=1.5, aes(color = Population, linetype = variable)) + geom_point(size = 1.5, aes(color = Population)) +
@@ -150,7 +158,6 @@ dds <- DESeqDataSetFromMatrix(countData = countdata,
                               colData = coldata,
                               design = ~ cell + treatment + cell:treatment)
 dds
-nrow(dds); ncol(dds)
 ```
 
 ###3. Exploratory analysis and visualization.
@@ -213,7 +220,7 @@ ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line))+
 ### 4. Differential Expression Analysis. 
 Always make sure to use the unnormalized raw counts for this. We will use DESeq function to perform differential analysis between samples; Unless specified, the analysis is between the last group and the first group. Different comparison can be done using 'contrast' argument. Steps involved underneath:
   
-1. estimation of size factors (controls for differences in sequencing depth of the samples)
+  1. estimation of size factors (controls for differences in sequencing depth of the samples)
 2. estimation of dispersion values for each gene,
 3. fitting a generalized linear model
 
@@ -392,7 +399,11 @@ ego_genesDown <- clusterProfiler::enrichGO(gene  = genes_down_ENTREZID,
 
 # barplot(ggo_up, order=T)
 # barplot(ggo_down)
-dotplot(ego_genesUp) + ggtitle("GO Over-representation Upregulated Genes") +
+
+```
+
+```{r warning=FALSE}
+enrichplot::dotplot(ego_genesUp) + ggtitle("GO Over-representation Upregulated Genes") +
   labs(x="Gene Ratio", y="GO Terms") +
   theme(legend.text = element_text(size = 12),
         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
@@ -400,7 +411,7 @@ dotplot(ego_genesUp) + ggtitle("GO Over-representation Upregulated Genes") +
         legend.title = element_text(size=12,face="bold"), 
         axis.title=element_text(size=12, face="bold"))
 
-dotplot(ego_genesDown) + ggtitle("GO Over-representation Downregulated Genes") +
+enrichplot::dotplot(ego_genesDown) + ggtitle("GO Over-representation Downregulated Genes") +
   labs(x="Gene Ratio", y="GO Terms") +
   theme(legend.text = element_text(size = 12),
         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
@@ -410,8 +421,8 @@ dotplot(ego_genesDown) + ggtitle("GO Over-representation Downregulated Genes") +
 
 # emapplot(ego_genesUp)
 # emapplot(ego_genesDown)
-cnetplot(ego_genesUp, categorySize="pvalue", foldChange=geneList_up)
-cnetplot(ego_genesDown, categorySize="pvalue", foldChange=geneList_down)
+enrichplot::cnetplot(ego_genesUp, categorySize="pvalue", color.params = list(foldChange = geneList_up))
+enrichplot::cnetplot(ego_genesDown, categorySize="pvalue", color.params = list(foldChange = geneList_down))
 
 
 ego_genesUp_df <- as.data.frame(ego_genesUp) 
@@ -584,7 +595,7 @@ Original code below produced many messages of `No id variables; using all as mea
 
 
 Rejiggering code not yet finished.  Should probably use 
-```{r Subline ANOVA, message=FALSE, warning=FALSE, eval=FALSE, include=FALSE}
+```{r Subline ANOVA, message=FALSE, warning=FALSE, eval=FALSE}
 # 1.1 ANOVA - compare btwn sublines 
 # group <- as.factor(c(1,1,1,2,2,2,3,3,3))
 # Getting anova values for each gene in dataset
