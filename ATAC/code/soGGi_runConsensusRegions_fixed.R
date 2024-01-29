@@ -117,7 +117,7 @@ summitPipeline <- function(reads,peakfile,fragmentLength,readlength){
 runConsensusRegions <- function(testRanges,method="majority",overlap="any"){
   if((class(testRanges) == "GRangesList" | class(testRanges) == "CompressedGRangesList") & length(testRanges) > 1){
     
-    reduced <- reduce(unlist(testRanges))
+    reduced <- GenomicRanges::reduce(unlist(testRanges))
     consensusIDs <- paste0("consensus_",seq(1,length(reduced)))
     mcols(reduced) <-
       do.call(cbind,lapply(testRanges,function(x)(reduced %over% x)+0))

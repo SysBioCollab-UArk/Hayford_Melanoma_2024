@@ -25,7 +25,7 @@ chrs <- c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8",
           "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY")
 
 openRegionPeaks_UT <- "../data/untreated_all_peaks.narrowPeak_peaks.narrowPeak"
-qcRes_UT <- ChIPQCsample("../data/trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_aligned_sorted_dedup_unique_fullClean.bam",
+qcRes_UT <- ChIPQCsample("../data/bam/trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_aligned_sorted_dedup_unique_fullClean.bam",
                          peaks = openRegionPeaks_UT,
                          annotation ="hg38",
                          chromosomes = chrs,
@@ -33,7 +33,7 @@ qcRes_UT <- ChIPQCsample("../data/trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_align
                          verboseT = FALSE)
 
 openRegionPeaks_I <- "../data/idling_peaks.narrowPeak"
-qcRes_I <- ChIPQCsample("../data/idling_subsample_25p_dedup_unique_fullClean.bam",
+qcRes_I <- ChIPQCsample("../data/bam/idling_subsample_25p_dedup_unique_fullClean.bam",
                         peaks = openRegionPeaks_I,
                         annotation ="hg38",
                         chromosomes = chrs,
@@ -103,9 +103,9 @@ vd_counts <- plyr::count(vd)
 library(eulerr)
 library(UpSetR)
 
-# shared_peaks <- c("Untreated" = vd_counts$freq[2],
-#                   "Idling" = vd_counts$freq[1],
-#                   "Untreated&Idling" = vd_counts$freq[3])
+shared_peaks <- c("Untreated" = vd_counts$freq[2],
+                  "Idling" = vd_counts$freq[1],
+                  "Untreated&Idling" = vd_counts$freq[3])
 
 venn_sharedPeaks <- euler(shared_peaks)
 plot(venn_sharedPeaks, fills = c("red", "blue"),
@@ -168,7 +168,8 @@ go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.H
 # dotplot(go_con_BP) + ggsave("GOenrichment_sub25_con_BP.pdf", width = 8, height = 5)
 # 
 # dotplot(go_UT_MF) + ggsave("GOenrichment_sub25_UT_MF.pdf", width = 8, height = 5)
-dotplot(go_I_MF) + ggsave("GOenrichment_sub25_I_MF.svg", width = 8, height = 5)
+dotplot(go_I_MF)
+ggsave("GOenrichment_sub25_I_MF.svg") #, width = 8, height = 5)
 # dotplot(go_con_MF) + ggsave("GOenrichment_sub25_con_MF.pdf", width = 8, height = 5)
 # 
 # dotplot(go_UT_CC) + ggsave("GOenrichment_sub25_UT_CC.pdf", width = 8, height = 5)
@@ -190,7 +191,7 @@ plotAnnoBar(peakAnnoList) +
         plot.title = element_text(size = 14, hjust = 0.5), axis.text=element_text(size=12),
         legend.title = element_text(size=12), axis.title=element_text(size=12),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-ggsave("ATAC_sub25_annotationDistribution_UniqueShared.pdf", width = 8, height = 6)
+ggsave("ATAC_sub25_annotationDistribution_UniqueShared.pdf") #, width = 8, height = 6)
 
 
 plotDistToTSS(peakAnnoList) +
@@ -198,7 +199,7 @@ plotDistToTSS(peakAnnoList) +
         plot.title = element_text(size = 14, hjust = 0.5), axis.text=element_text(size=12),
         legend.title = element_text(size=12), axis.title=element_text(size=12),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
-ggsave("ATAC_sub25_distanceToTSS_UniqueShared.pdf", width = 8, height = 6)
+ggsave("ATAC_sub25_distanceToTSS_UniqueShared.pdf") #, width = 8, height = 6)
 
 tagMatrixList <- lapply(files, getTagMatrix, windows=promoter)
 plotAvgProf(tagMatrixList, xlim=c(-3000, 3000)) +
@@ -206,4 +207,4 @@ plotAvgProf(tagMatrixList, xlim=c(-3000, 3000)) +
         plot.title = element_text(size = 14, hjust = 0.5), axis.text=element_text(size=12),
         legend.title = element_text(size=12), axis.title=element_text(size=12),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-ggsave("ATAC_sub25_averageBindingProfile_UniqueShared.pdf", width = 6, height = 4)
+ggsave("ATAC_sub25_averageBindingProfile_UniqueShared.pdf") #, width = 6, height = 4)
