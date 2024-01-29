@@ -164,16 +164,19 @@ go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.H
 
 
 # dotplot(go_UT_BP) + ggsave("GOenrichment_sub25_UT_BP.pdf", width = 8, height = 5)
-# dotplot(go_I_BP) + ggsave("GOenrichment_sub25_I_BP.pdf", width = 8, height = 5)
+# dotplot(go_I_BP)
+# ggsave("GOenrichment_sub25_I_BP.pdf") #, width = 8, height = 5)
 # dotplot(go_con_BP) + ggsave("GOenrichment_sub25_con_BP.pdf", width = 8, height = 5)
 # 
 # dotplot(go_UT_MF) + ggsave("GOenrichment_sub25_UT_MF.pdf", width = 8, height = 5)
 dotplot(go_I_MF)
-ggsave("GOenrichment_sub25_I_MF.svg") #, width = 8, height = 5)
+ggsave("GOenrichment_sub25_I_MF.pdf") #, width = 8, height = 5)
+# ggsave("GOenrichment_sub25_I_MF.svg") #, width = 8, height = 5)
 # dotplot(go_con_MF) + ggsave("GOenrichment_sub25_con_MF.pdf", width = 8, height = 5)
 # 
 # dotplot(go_UT_CC) + ggsave("GOenrichment_sub25_UT_CC.pdf", width = 8, height = 5)
-# dotplot(go_I_CC) + ggsave("GOenrichment_sub25_I_CC.pdf", width = 8, height = 5)
+# dotplot(go_I_CC)
+# ggsave("GOenrichment_sub25_I_CC.pdf") #, width = 8, height = 5)
 # dotplot(go_con_CC) + ggsave("GOenrichment_sub25_con_CC.pdf", width = 8, height = 5)
 
 
