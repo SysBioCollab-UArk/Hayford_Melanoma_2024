@@ -1,0 +1,8 @@
+Files that need to be downloaded and added to this directory are:
+
+* idling_subsample_25p_dedup_unique_fullClean.bam
+* idling_subsample_25p_dedup_unique_fullClean.bam.bai
+* trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_aligned_sorted_dedup_unique_fullClean.bam
+* trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_aligned_sorted_dedup_unique_fullClean.bam.bai
+* trimmed_3334-CH-2-CGTACTAG-CTCTCTAT_S122_aligned_sorted_dedup_unique_fullClean.bam
+* trimmed_3334-CH-2-CGTACTAG-CTCTCTAT_S122_aligned_sorted_dedup_unique_fullClean.bam.bai
