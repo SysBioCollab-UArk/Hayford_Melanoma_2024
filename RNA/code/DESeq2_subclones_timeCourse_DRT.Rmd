@@ -1,16 +1,12 @@
 ---
 title: "RNAseq DESeq2 Time Course"
-author: "Corey Hayford (modifed from Jack)"
-date: "November 2018-January 2019"
+author: "Corey Hayford & Darren Tyson"
+date: "November 2018 through January 2024"
 output: html_notebook
 ---
 
-### DRT modified file to work on any computer
-2022-01-17
-Some files appeared to be missing to run this notebook. Trying to get all to run
-
 ## Overview
-This is a pipeline for differential analysis of RNASeq data from SKMEL5 sublines using DESeq2 statistical package. Three sublines: SC01 (*regressing*), SC07 (*stationary*) and SC10 (*expanding*) were analyzed for gene expression differences. In addition, time course changes in 8uM PLX4720 were also performed for each subline. Time points are: 0, 3d, 8d. The differential analysis will be performed based on the contrasts defined below. 
+This is a pipeline for differential analysis of RNASeq data from SKMEL5 sublines using DESeq2 statistical package. Three sublines: SC01 (*regressing*), SC07 (*stationary*) and SC10 (*expanding*) were analyzed for gene expression differences. In addition, time course changes in 8 µM PLX4720 were also performed for each subline. Time points are: 0, 3d, 8d. The differential analysis will be performed based on the contrasts defined below. 
 General steps for the analysis are:
   
 ### 1. Read counts table: 
@@ -20,7 +16,7 @@ General steps for the analysis are:
 2. Get read counts table. 
 Read the raw counts file processed by featureCounts. The fastq files were aligned with HiSat2, and the read counts were obtained using featureCounts of Rsubread packages.
 
-```{r Installation, eval=FALSE}
+```{r Installation}
 pkgs <- c("BiocManager","DESeq2","org.Hs.eg.db","clusterProfiler","HDO.db",
           "pheatmap","ggnewscale","PoiClaClu","enrichR","gtable","Rmisc")
 source("getReqdPkgs.r")
@@ -47,9 +43,12 @@ suppressPackageStartupMessages(expr={
 })
 
 SAVEFILES <- FALSE
+
+SAVEPATH <- file.path("~/Desktop/melanoma_DESeq2")
+if(!dir.exists(SAVEPATH) & SAVEFILES) dir.create(SAVEPATH)
 ```
 
-```{r, echo=TRUE}
+```{r}
 countdata <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=",")
 
 #Rename columns
@@ -78,8 +77,6 @@ countdata <- countdata[, 2:28]
 
 # remove genes with <5 counts in all samples
 countdata <- countdata[apply(countdata, 1, function(x) all(x > 5)),]
-
-head(countdata)
 ```
 
 
@@ -105,28 +102,23 @@ Described above are: countdata- raw counts, coldata: sample information table.
 dds <- DESeqDataSetFromMatrix(countData = countdata,
                               colData = coldata,
                               design = ~ cell + treatment + cell:treatment)
-dds
 ```
 
 ### 3. Exploratory analysis and visualization.
 There are two separate steps in the workflow; the one which involves data transformations in order to visualize sample relationships and the second step involves statistical testing methods which requires the original raw counts. 
 
 #### 3.1. Pre-filtering and normalization. 
-Pre-filtering and normalization is required to remove lowly expressed genes and log normalize.
+Pre-filtering and normalization is required to remove low-expressed genes and log normalize.
 
 ```{r}
 dds2 <- dds[rowSums(counts(dds)) > 18, ] # remove rows with minimum of 2 read per condition
 
 # log normalize
 rld <- rlog(dds2, blind = FALSE)
-
-# save(dds2, file = "DDS_SC-1,7,10_cell-treat-int.RData")
-# load("DDS_SC-1,7,10_cell-treat-int.RData")
-dim(rld)
 ```
 
 #### 3.2. Visualize sample-to-sample distances. 
-We could use Principal Component Analysis (PCA) to visualize relationships between samples. 
+We use Principal Component Analysis (PCA) to visualize relationships between samples. 
 ```{r fig.height=7, fig.width=7}
 ## Use prcomp function
 # Colored by cell line, shape by time point, lines connecting time
@@ -141,12 +133,14 @@ pca_DEseq_df <- data.frame(PC1 = pca_DEseq$x[,1],
 
 pca_DEseq_means <- ddply(pca_DEseq_df, .(cell.line, day), summarise, meanPC1 = mean(PC1), meanPC2 = mean(PC2))
 
-ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line))+
+mycolors <- c("orange","turquoise","mediumorchid4")
+ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line)) +
   geom_point(aes(shape = day), size=5) +
   geom_path(data = pca_DEseq_means, 
             aes(x=meanPC1, y=meanPC2,
                 color=cell.line), arrow = arrow(),
-            linewidth = 2) +
+            linewidth = 2) + 
+  scale_colour_manual(values=mycolors) +
   labs(x=paste0("PC1 (",pca_DEseq_perc[1],"% variance)"), y=paste0("PC2 (",pca_DEseq_perc[2],"% variance)")) +
   theme_bw() + ggtitle("PCA - Subclones in Time") +
   theme(legend.text = element_text(size = 12), 
@@ -159,7 +153,7 @@ ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line))+
         axis.title=element_text(size=12, face="bold"))
   
 
-
+if(SAVEFILES) ggplot2::ggsave(filename=file.path(SAVEPATH,"Subclones_PCA.pdf"), device="pdf", width=7, height=7)
 ```
 
 ### 4. Differential Expression Analysis. 
@@ -192,52 +186,24 @@ Significant log2 fold change is 1.585 (== 3-fold change in log2 space).
 ```{r}
 res_0to8d <- results(dds, name="treatment_8_vs_0", cooksCutoff = 0.99, 
                      independentFiltering = TRUE, alpha = 0.05, pAdjustMethod = "BH")
-summary(res_0to8d)
+
 # order results table by the smallest adjusted p value:
 res_0to8d <- res_0to8d[order(res_0to8d$padj),]
 results_0to8d <- as.data.frame(res_0to8d)
 
-results_0to8d <- mutate(results_0to8d, sig=ifelse(results_0to8d$padj<0.05 & results_0to8d$log2FoldChange > 1.585, "Upregulated", ifelse(results_0to8d$padj<0.05 & results_0to8d$log2FoldChange < -1.585, "Downregulated", "Not Significant")))
+results_0to8d <- mutate(results_0to8d, sig=ifelse(results_0to8d$padj<0.05 & results_0to8d$log2FoldChange > 1.585, "Upregulated",
+                                                  ifelse(results_0to8d$padj<0.05 & results_0to8d$log2FoldChange < -1.585, 
+                                                         "Downregulated", "Not Significant")))
 
 row.names(results_0to8d) <- row.names(res_0to8d)
 
 DEgenes_0to8d <- results_0to8d[which(abs(results_0to8d$log2FoldChange) > log2(1.5) & results_0to8d$padj < 0.05),]
 
-if(SAVEFILES) write.csv(DEgenes_0to8d, file="~/Desktop/DEgenes_0to8d.csv")
-```
-
-### Volcano plot
-```{r}
-volcano <- ggplot(results_0to8d, aes(log2FoldChange, -log10(pvalue))) +
-  geom_point(aes(col = sig)) + theme_bw() +
-  scale_color_manual(values = c("red", "grey", "green3")) +
-  # ggtitle("Volcano Plot of Untreated vs Idling") +
-  labs(x="log2(Fold Change)", y="Log(Odds Ratio)") +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.text = element_text(size = 12),
-        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
-        axis.text=element_text(size=12),
-        legend.title = element_text(size=12), 
-        axis.title=element_text(size=12),
-        legend.position = "none")
-
-volcano
-# volcano + ggrepel::geom_text_repel(data=results_0to8d[1:10, ], 
-#                                    ggplot2::aes(label=rownames(results_0to8d[1:10, ])))
-# save(results_0to8d, file="untreatedIdling_DEA.RData")
+if(SAVEFILES) write.csv(DEgenes_0to8d, file=file.path(SAVEPATH,"DEgenes_0to8d.csv"))
 ```
 
 
-```{r eval=FALSE, include=FALSE}
-DEgenes_0to8d <- DEgenes_0to8d[order(abs(DEgenes_0to8d$log2FoldChange),DEgenes_0to8d$sig, decreasing = TRUE),]
-temp <- DEgenes_0to8d[DEgenes_0to8d$baseMean > 300,]
-temp <- temp[abs(temp$log2FoldChange)>2,]
-if(SAVEFILES) write.csv(DEgenes_0to8d, file = "DEgenes_0to8d.csv")
-```
-
-
-```{r}
+```{r warning=FALSE}
 upreg_genes <- subset(results_0to8d, padj<0.05 & log2FoldChange>2)
 downreg_genes <-subset(results_0to8d, padj<0.05 & log2FoldChange<(-2))
 
@@ -253,7 +219,7 @@ genes_up_ENTREZID <- bitr(genes_up, fromType = "SYMBOL", toType = "ENTREZID", Or
 genes_down_ENTREZID <- bitr(genes_down, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)$ENTREZID
 
 # Group GO
-ggo_up <- clusterProfiler::groupGO(gene     = genes_up_ENTREZID,
+ggo_up <- clusterProfiler::groupGO(gene  = genes_up_ENTREZID,
                                 OrgDb    = org.Hs.eg.db,
                                 ont      = "BP",
                                 level    = 3,
@@ -262,10 +228,10 @@ ggo_up_df <- as.data.frame(ggo_up)
 ggo_up_df <- ggo_up_df[order(-ggo_up_df$Count),] 
 
 ggo_down <- clusterProfiler::groupGO(gene = genes_down_ENTREZID,
-                                OrgDb    = org.Hs.eg.db,
-                                ont      = "BP",
-                                level    = 3,
-                                readable = TRUE)
+                                 OrgDb    = org.Hs.eg.db,
+                                 ont      = "BP",
+                                 level    = 3,
+                                 readable = TRUE)
 
 # GO over-representation test
 ego_genesUp <- clusterProfiler::enrichGO(gene  = genes_up_ENTREZID,
@@ -276,8 +242,6 @@ ego_genesUp <- clusterProfiler::enrichGO(gene  = genes_up_ENTREZID,
                                  qvalueCutoff  = 0.05, 
                                  readable      = TRUE)
 
-# View(as.data.frame(ego_genesUp))
-
 ego_genesDown <- clusterProfiler::enrichGO(gene  = genes_down_ENTREZID,
                                  OrgDb         = org.Hs.eg.db,
                                  ont           = "BP",
@@ -287,8 +251,8 @@ ego_genesDown <- clusterProfiler::enrichGO(gene  = genes_down_ENTREZID,
                                  readable      = TRUE)
 
 ```
-
-```{r warning=FALSE}
+### Plot GO enrichment
+```{r fig.height=7, fig.width=7, warning=FALSE}
 enrichplot::dotplot(ego_genesUp) + ggtitle("GO Over-representation Upregulated Genes") +
   labs(x="Gene Ratio", y="GO Terms") +
   theme(legend.text = element_text(size = 12),
@@ -305,15 +269,12 @@ enrichplot::dotplot(ego_genesDown) + ggtitle("GO Over-representation Downregulat
         legend.title = element_text(size=12,face="bold"), 
         axis.title=element_text(size=12, face="bold"))
 
-# emapplot(ego_genesUp)
-# emapplot(ego_genesDown)
 enrichplot::cnetplot(ego_genesUp, categorySize="pvalue", color.params = list(foldChange = geneList_up))
 enrichplot::cnetplot(ego_genesDown, categorySize="pvalue", color.params = list(foldChange = geneList_down))
 
 
 ego_genesUp_df <- as.data.frame(ego_genesUp) 
 egoUp <- ego_genesUp_df[order(-ego_genesUp_df$Count),]
-# sorted_egoUp_top10 <- head(egoUp, 10)
 egoUp_genes <- strsplit(egoUp$geneID, "/", fixed=TRUE)
 
 ```
@@ -321,12 +282,11 @@ egoUp_genes <- strsplit(egoUp$geneID, "/", fixed=TRUE)
 
 ```{r}
 geneList_all <- as.vector(results_0to8d$log2FoldChange)
-names(geneList_all) <- rownames(results_0to8d)
-a <- names(geneList_all)
-genes_ENTREZID <- bitr(a, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)$ENTREZID
+genes_HGCN <- rownames(results_0to8d)
+genes_ENTREZID <- bitr(genes_HGCN, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)$ENTREZID
 names(geneList_all) <- genes_ENTREZID
 
-gene_df <- data.frame(Entrez=names(geneList_all), HGNC=a, FC=geneList_all)
+gene_df <- data.frame(Entrez=names(geneList_all), HGNC=genes_HGCN, FC=geneList_all)
 gene_df <- gene_df[abs(gene_df$FC) > 1,]
 gene_df$group <- "upregulated"
 gene_df$group[gene_df$FC < 0] <- "downregulated"
@@ -334,18 +294,15 @@ gene_df$othergroup <- "A"
 gene_df$othergroup[abs(gene_df$FC) > 2] <- "B"
 
 formula_res <- compareCluster(Entrez~group+othergroup, data=gene_df, fun="enrichKEGG")
-head(as.data.frame(formula_res))
-
 ```
 
-#### Clustering ###
+### Clustering
 
 ```{r}
 # log normalize
 rld2 <- rlog(dds, blind = FALSE)
 
 sampleDists <- dist(t(assay(rld2)))
-sampleDists
 
 sampleDistMatrix <- as.matrix( sampleDists )
 rownames(sampleDistMatrix) <- paste(rld2$treatment, rld2$cell, sep = " - " )
@@ -366,21 +323,6 @@ pheatmap(samplePoisDistMatrix,
          clustering_distance_cols = poisd$dd,
          col = colors)
 
-mds <- as.data.frame(colData(rld2))  %>%
-         cbind(cmdscale(sampleDistMatrix))
-ggplot(mds, aes(x = `1`, y = `2`, color = cell, shape = treatment)) +
-  geom_point(size = 3) + coord_fixed() + theme_bw() +
-  xlab("PC1") + ylab("PC2") +
-  theme(legend.text = element_text(size = 10), 
-        plot.title = element_text(size = 14, 
-                                  hjust = 0.5, 
-                                  face = "bold"), 
-        axis.text=element_text(size=12),
-        legend.title = element_text(size=12,face="bold"),
-        # legend.position = "bottom",
-        axis.title=element_text(size=12))
-
-# library("genefilter")
 topVarGenes <- head(order(rowVars(assay(rld2)), decreasing = TRUE), 5000)
 mat  <- assay(rld2)[ topVarGenes, ]
 mat  <- mat - rowMeans(mat)
