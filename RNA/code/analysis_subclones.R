@@ -7,8 +7,13 @@ library(ggpubr)
 library(org.Hs.eg.db)
 library(clusterProfiler)
 
+# set working directory to RNA folder
+if (Sys.getenv("RSTUDIO") == "1") {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
+
 ## Get the data in the right format
-d <- read.csv("featureCounts_matrix_all.csv", header=T, sep=",")
+d <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=",")
 
 #Rename columns
 cols <- c("ensembl_gene_id", "SC01_day0_rep1", "SC01_day0_rep2", "SC01_day0_rep3",
@@ -87,6 +92,7 @@ pca_DEseq_df <- data.frame(PC1 = pca_DEseq$x[,1],
                            day = rep(c("Day0", "Day3", "Day8"), each = 3),
                            replicate = rep(c("Rep1", "Rep2", "Rep3"), times=9))
 
+library(plyr)
 pca_DEseq_means <- ddply(pca_DEseq_df, .(cell.line, day), summarise, meanPC1 = mean(PC1), meanPC2 = mean(PC2))
 
 plt_pca <- ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line))+
@@ -108,10 +114,13 @@ plt_pca <- ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line))+
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank())
 
-plt_pca + ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Fig.svg", width = 4, height = 3)
+library(svglite)
+plt_pca 
+ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Fig.svg", width = 4, height = 3)
 
 plt_pca_leg <- get_legend(plt_pca)
-as_ggplot(plt_pca_leg) + ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Figleg.svg")
+as_ggplot(plt_pca_leg) 
+ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Figleg.svg")
 
 
 ## Differential Expression Analysis
