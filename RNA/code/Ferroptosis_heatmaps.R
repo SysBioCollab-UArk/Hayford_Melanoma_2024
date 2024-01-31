@@ -1,6 +1,7 @@
 library(reshape2)
 library(ggplot2)
 library(scales)
+library(Rmisc)
 
 load("../data/merged_countdata.RData")
 Ferr = read.delim("../data/KEGGFerroptosis_hsa04216_06-25-18.txt", header=T, stringsAsFactors = F)
@@ -25,7 +26,8 @@ Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=value, group = interaction(variabl
         legend.title = element_text(size=12,face="bold"),
         axis.title=element_text(size=12,face="bold"))
 
-Fer_ggploted + ggsave("FerroptosisGeneSignature_rawCounts_SKMEL5sublines+treatment.pdf", width = 20, height = 25)
+Fer_ggploted 
+ggsave("FerroptosisGeneSignature_rawCounts_SKMEL5sublines+treatment.pdf", width = 20, height = 25)
 
 load("../data/RLD_SC-1,7,10_0,3,8d_20180701.RData")
 normdata_Fer <- as.data.frame(assay(rld))[Ferr$GeneName,]
@@ -149,5 +151,5 @@ ggplot(Ferr_fold_melt, aes(variable, Gene, fill = value)) +
         axis.text.x=element_text(angle = 90, hjust = 0),
         axis.title=element_text(size=14),
         panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank()) +
-  ggsave("Ferroptosis_FCHM_selected_wide.pdf", width = 10, height = 6)
+        panel.grid.minor = element_blank()) 
+ggsave("Ferroptosis_FCHM_selected_wide.pdf", width = 10, height = 6)
