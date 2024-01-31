@@ -124,6 +124,7 @@ ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Figleg.svg")
 
 
 ## Differential Expression Analysis
+dds <- DESeq(dds)
 res_0to8d <- results(dds, name="treatment_8_vs_0", cooksCutoff = 0.99, 
                      independentFiltering = TRUE, alpha = 0.05, pAdjustMethod = "BH")
 summary(res_0to8d)
@@ -216,15 +217,18 @@ ego_genesDown <- clusterProfiler::enrichGO(gene  = genes_down_ENTREZID,
                                            qvalueCutoff  = 0.05, 
                                            readable      = TRUE)
 
-## One of these plots is FIG 4E
-dotplot(ego_genesUp_MF) + ggtitle("GO Over-representation Upregulated Genes") +
+## This creates FIG 3A
+dotplot(ego_genesUp_MF, font.size = 14, label_format = 40) + 
+  ggtitle("GO Over-representation Upregulated Genes for RNA-seq") +
   labs(x="Gene Ratio", y="GO Terms") +
   theme(legend.text = element_text(size = 12),
         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
         axis.text=element_text(size=12),
         legend.title = element_text(size=12,face="bold"), 
         axis.title=element_text(size=12, face="bold"))
+ggsave("GOenrichment_genesUp_MF.pdf")
 
+# this is not FIG 3A because it calculated BP-type GO, not MF to compare w/ ATAC
 dotplot(ego_genesDown) + ggtitle("GO Over-representation Downregulated Genes") +
   labs(x="Gene Ratio", y="GO Terms") +
   theme(legend.text = element_text(size = 12),
