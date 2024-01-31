@@ -169,7 +169,7 @@ go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.H
 # dotplot(go_con_BP) + ggsave("GOenrichment_sub25_con_BP.pdf", width = 8, height = 5)
 # 
 # dotplot(go_UT_MF) + ggsave("GOenrichment_sub25_UT_MF.pdf", width = 8, height = 5)
-dotplot(go_I_MF)
+dotplot(go_I_MF, font.size = 14, label_format = 40)
 ggsave("GOenrichment_sub25_I_MF.pdf") #, width = 8, height = 5)
 # ggsave("GOenrichment_sub25_I_MF.svg") #, width = 8, height = 5)
 # dotplot(go_con_MF) + ggsave("GOenrichment_sub25_con_MF.pdf", width = 8, height = 5)
