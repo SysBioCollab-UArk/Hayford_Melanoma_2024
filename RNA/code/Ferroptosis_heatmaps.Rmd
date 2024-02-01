@@ -94,7 +94,7 @@ Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=log2(value), group = interaction(v
 
 Fer_ggploted
 
-if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_rawCounts_SKMEL5sublines+treatment.pdf", width = 20, height = 25)
+if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_rawCounts_SKMEL5sublines+treatment.pdf") #, width = 20, height = 25)
 ```
 
 
@@ -131,7 +131,7 @@ Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=value, group = interaction(variabl
 
 Fer_ggploted
 
-if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_normCounts_SKMEL5sublines+treatment.pdf", width = 20, height = 25)
+if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_normCounts_SKMEL5sublines+treatment.pdf") #, width = 20, height = 25)
 ```
 
 
@@ -204,7 +204,7 @@ myplot <- ggplot(Ferr_fold_melt, aes(variable, Gene, fill = value)) +
         panel.grid.minor = element_blank())
 
 myplot
-# if(SAVEPLOTS) ggsave("Ferroptosis_FCHM_selected_wide.pdf", width = 8, height = 8)
+# if(SAVEPLOTS) ggsave("Ferroptosis_FCHM_selected_wide.pdf") #, width = 8, height = 8)
 ```
 
 ```{r fig.height=10, fig.width=8}
@@ -258,7 +258,7 @@ fer <- list(genes=Ferr_fold$Gene,
 
 ```{r fig.height=8, fig.width=8}
 if(SAVEPLOTS)
-    pdf("Ferroptosis_heatmap_annot.pdf", width = 8, height = 8)
+    pdf("Ferroptosis_heatmap_annot.pdf") #, width = 8, height = 8)
 
 ht_opt(
     legend_title_gp = gpar(fontsize = 8, fontface = "bold"), 
@@ -277,5 +277,3 @@ ht_list = Heatmap(as.matrix(fer$fold_exp), name = "Log2 fold expression",
 
 ht_list
 ```
-
-

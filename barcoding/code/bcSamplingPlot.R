@@ -108,9 +108,10 @@ g1 <- ggplot(bcCount_melt, aes(x=variable,y=value,color=variable)) +
         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
         axis.text=element_text(size=14),
         legend.title = element_text(size=14), axis.title=element_text(size=14),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  ylim(300, 500)
 
-ggsave("SKMEL5_numUniqueBC_byCondition.pdf", width = 4, height = 5)
+ggsave("SKMEL5_numUniqueBC_byCondition.pdf") #, width = 4, height = 5)
 
 # ggplot(subset(bcCount_melt, variable %in% c("Untreated", "Idling")),
 #               aes(x=variable,y=value,color=variable)) +
@@ -242,7 +243,7 @@ plot_propShared_byRep <- ggplot(sharingBCs_withinRep_melt_prop, aes(x=variable, 
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 plot_propShared_byRep 
-ggsave("SKMEL5_propShared_byReplicate.pdf", width = 4, height = 5)
+ggsave("SKMEL5_propShared_byReplicate.pdf") #, width = 4, height = 5)
 plot_propShared_byRep_leg <- ggpubr::get_legend(plot_propShared_byRep)
 
 ggpubr::as_ggplot(plot_propShared_byRep_leg)
@@ -260,7 +261,7 @@ ggplot(bcNum_melt, aes(x=variable, y=Barcode, fill = value)) +
   geom_tile() + theme_bw() +
   scale_fill_gradient(name = expression(Log[10]~RPM), trans = "log10",
                       low = "grey90", high = "black") +
-  # labs(x = "Condition", y = "Barcode") +
+  labs(x = "Condition", y = "Barcode") +
   # scale_x_discrete(name = "Untreated                      Treated",
   #                  limits = c("Rep1", "Rep2", "Rep3",
   #                             "Rep1", "Rep2", "Rep3"))+
@@ -271,7 +272,7 @@ ggplot(bcNum_melt, aes(x=variable, y=Barcode, fill = value)) +
         axis.text=element_text(size=14),
         legend.title = element_text(size=14), axis.title=element_text(size=14),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-ggsave("SKMEL5_barcode_RPM_rank.pdf", width = 4, height = 5)
+ggsave("SKMEL5_barcode_RPM_rank.pdf") #, width = 4, height = 5)
 
 #####
 
@@ -373,7 +374,7 @@ ggplot(bcNum_prop_compare_sub, aes(x=Barcode, y=value, group = Sample,
     plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
     legend.title = element_text(size=14), axis.title=element_text(size=14))
 
-ggsave("SKMEL5_barcode_propRankAbundance_comparison.pdf", width = 6, height = 4)
+ggsave("SKMEL5_barcode_propRankAbundance_comparison.pdf") #, width = 6, height = 4)
 
 ### Fold Change Plot
 bcFC <- merge(x = bcNum_prop_UT_testMeans, y = bcNum_prop_I_testMeans,
@@ -414,6 +415,7 @@ plt_hist_BCoverlay <- ggplot(test_hist1, aes(x=x)) + theme_bw() +
   geom_histogram(aes(y= (after_stat(count))/(n*bw), fill = BCnum),
                  binwidth = 1, color = "black", linewidth = 0.1) +
   scale_fill_manual(values = rainbow(24)) +
+  labs(fill = "Barcode") +
   geom_density(data = bcFC_order, aes(l2FC), fill = "grey",
                color = "black", alpha = 0.3) +
   xlab("Log2 Fold Change") + ylab("Density") +
@@ -421,12 +423,12 @@ plt_hist_BCoverlay <- ggplot(test_hist1, aes(x=x)) + theme_bw() +
   theme(
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     axis.text = element_text(size = 12),
-    legend.position = "none", legend.text = element_text(size = 12),
+    legend.position = "right", legend.text = element_text(size = 12),
     plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
     legend.title = element_text(size=12), axis.title=element_text(size=12))
 
 plt_hist_BCoverlay 
-ggsave("SKMEL5_barcode_FCdensity_bcOverlay.pdf", width = 3.5, height = 3)
+ggsave("SKMEL5_barcode_FCdensity_bcOverlay.pdf") #, width = 3.5, height = 3)
 plt_hist_BCoverlay_leg <- ggpubr::get_legend(plt_hist_BCoverlay)
 ggpubr::as_ggplot(plt_hist_BCoverlay_leg)
 ggsave("SKMEL5_barcode_FCdensity_bcOverlay_leg.pdf")

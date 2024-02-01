@@ -52,7 +52,7 @@ countdata <- d
 # # countdata <- countdata[,c(baseline)] 
 # rownames(countdata) <- d[,"ensembl_gene_id"]
 
-save(countdata, file = "merged_countdata.RData")
+# save(countdata, file = "merged_countdata.RData")
 
 ## Creating a DEseq2 object
 condition <- c("0", "3", "8")
@@ -69,8 +69,8 @@ dds <- DESeqDataSetFromMatrix(countData = countdata,
                               colData = coldata,
                               design = ~ cell + treatment + cell:treatment)
 
-dds2 <- dds[rowSums(counts(dds)) > 18, ] # remove rows with minimum of 2 read per condition
-save(dds2, file = "DDS_SC-1,7,10_cell-treat-int.RData")
+# dds2 <- dds[rowSums(counts(dds)) > 18, ] # remove rows with minimum of 2 read per condition
+# save(dds2, file = "DDS_SC-1,7,10_cell-treat-int.RData")
 
 dds2 <- dds[rowSums(counts(dds)) > 18, ] # remove rows with minimum of 2 read per condition
 nrow(dds2)
@@ -78,7 +78,7 @@ nrow(dds2)
 
 ## Plot normalized data
 rld <- rlog(dds2, blind = FALSE)
-save(rld, file = "RLD_SC-1,7,10_0,3,8d_20180701.RData")
+# save(rld, file = "RLD_SC-1,7,10_0,3,8d_20180701.RData")
 plotPCA(rld, intgroup = c("cell", "treatment"), ntop=5000)
 
 ## Use prcomp function
@@ -116,11 +116,13 @@ plt_pca <- ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line))+
 
 library(svglite)
 plt_pca 
-ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Fig.svg", width = 4, height = 3)
+# ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Fig.svg") #, width = 4, height = 3)
+ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Fig.pdf") #, width = 4, height = 3)
 
 plt_pca_leg <- get_legend(plt_pca)
 as_ggplot(plt_pca_leg) 
-ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Figleg.svg")
+# ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Figleg.svg")
+ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Figleg.pdf")
 
 
 ## Differential Expression Analysis
@@ -219,8 +221,8 @@ ego_genesDown <- clusterProfiler::enrichGO(gene  = genes_down_ENTREZID,
 
 ## This creates FIG 3A
 dotplot(ego_genesUp_MF, font.size = 14, label_format = 40) + 
-  ggtitle("GO Over-representation Upregulated Genes for RNA-seq") +
-  labs(x="Gene Ratio", y="GO Terms") +
+  # ggtitle("GO Over-representation Upregulated Genes for RNA-seq") +
+  labs(x="Gene Ratio") +
   theme(legend.text = element_text(size = 12),
         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
         axis.text=element_text(size=12),
@@ -229,8 +231,9 @@ dotplot(ego_genesUp_MF, font.size = 14, label_format = 40) +
 ggsave("GOenrichment_genesUp_MF.pdf")
 
 # this is not FIG 3A because it calculated BP-type GO, not MF to compare w/ ATAC
-dotplot(ego_genesDown) + ggtitle("GO Over-representation Downregulated Genes") +
-  labs(x="Gene Ratio", y="GO Terms") +
+dotplot(ego_genesDown, font.size = 14, label_format = 40) + 
+  # ggtitle("GO Over-representation Downregulated Genes") +
+  labs(x="Gene Ratio") +
   theme(legend.text = element_text(size = 12),
         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
         axis.text=element_text(size=12),

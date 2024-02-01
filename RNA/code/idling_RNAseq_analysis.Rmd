@@ -117,9 +117,7 @@ gene_sets <- list(Kv7=c("KCNQ1", "KCNQ2" , "KCNQ3", "KCNQ4" , "KCNQ5"),
                   PMCA= c("ATP2B1" , "ATP2B2" , "ATP2B3" , "ATP2B4"),
                   orai= c("ORAI1" , "ORAI2" , "ORAI3"),
                   stim= c("STIM1","STIM2"),
-                  VGCC=c(rownames(d)[grep("CACNA1",rownames(d))],"CACNA2D2")
-                  )
-
+                  VGCC=c(rownames(d)[grep("CACNA1",rownames(d))],"CACNA2D2"))
 ```
 ### Descriptions of gene classes
 #### Classes  
@@ -232,13 +230,7 @@ plot_timecourse(prep_dat(gene_name=mitf_targets, log_scale=TRUE),
                 plot_title="MITF target genes", 
                 savefilename=savefilename)
 ```
-TRPM1 and EDNRB are both induce ~4-fold (2^2) after 8 days of BRAFi (in idling), even though MITF expression remains relatively stable.
-
-
-```{r}
-
-```
-
+TRPM1 and EDNRB are both induced ~4-fold (2^2) after 8 days of BRAFi (in idling), even though MITF expression remains relatively stable.
 
 Related to this paper:
 Tasdogan, A., Faubert, B., Ramesh, V., Ubellacker, J. M., Shen, B., Solmonson, A., Murphy, M. M., Gu, Z., Gu, W., Martin, M., Kasitinon, S. Y., Vandergriff, T., Mathews, T. P., Zhao, Z., Schadendorf, D., DeBerardinis, R. J., & Morrison, S. J. (2020). Metabolic heterogeneity confers differences in melanoma metastatic potential. Nature, 577(7788), 115-120. https://doi.org/10.1038/s41586-019-1847-2
@@ -290,7 +282,6 @@ Genes to include:
 https://doi.org/10.1158/0008-5472.can-08-1053  
 The Brn-2 transcription factor (POU3F2) regulates proliferation and invasiveness and lies downstream from mitogen-activated protein kinase (MAPK) and Wnt/β-catenin, two melanoma-associated signaling pathways
 
-
 ```{r}
 temp <- c("PPARGC1A","TYRP1")
 # temp <- c("AXL","NGFR","CDH2","TNFRSF1A")
@@ -324,9 +315,6 @@ plot_timecourse(prep_dat(gene_name=temp, log_scale=TRUE),
                 savefilename=savefilename)
 ```
 
-
-
-
 Calcium homeostasis genes
 http://purl.obolibrary.org/obo/GO_0006874
 GO:0051480
@@ -342,6 +330,7 @@ m <- getBM(attributes = c('ensembl_gene_id','external_gene_name', 'hgnc_symbol',
       values = 'GO:0006874', 
       mart = ensembl)
 ```
+
 ### Extract gene names into `ca_sig` object
 Filter for gene names in data. Keep track of which ones weren't present.
 ```{r}
@@ -396,7 +385,7 @@ b <- b[order(apply(b, 1, function(x) max(x)), decreasing = TRUE), ]
 
 ```{r fig.height=4, fig.width=3}
 if(SAVEPLOT) 
-    pdf(file="~/Desktop/ca-genes_fold-change_heatmap.pdf", height=6, width=4)
+    pdf(file="~/Desktop/ca-genes_fold-change_heatmap.pdf") #, height=6, width=4)
 heatmap.2(as.matrix(b), Rowv=FALSE, Colv=FALSE, dendrogram="none",
           scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
           col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
@@ -412,14 +401,12 @@ heatmap.2(as.matrix(b), Rowv=FALSE, Colv=FALSE, dendrogram="none",
                                as.character(signif(breaks[length(breaks)],2)))
                  ))}
           )
-
 ```
-
 
 Remove 0 time point columns and replot; also adjusted first argument in `mar` in `key.par` to be 6 (spacing above plot to bottom of color key). 
 ```{r fig.height=6, fig.width=4}
 if(SAVEPLOT) 
-    pdf(file="~/Desktop/ca-genes_fold-change_heatmap.pdf", height=6, width=4)
+    pdf(file="~/Desktop/ca-genes_fold-change_heatmap.pdf") #, height=6, width=4)
 heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]), Rowv=FALSE, Colv=FALSE, dendrogram="none",
           scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
           col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
@@ -435,7 +422,6 @@ heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]), Rowv=FALSE, Colv=FALSE, dendr
                                as.character(signif(breaks[length(breaks)],2)))
                  ))}
           )
-
 ```
 
 ```{r}

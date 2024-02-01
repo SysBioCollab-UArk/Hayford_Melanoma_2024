@@ -153,7 +153,7 @@ ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line)) +
         axis.title=element_text(size=12, face="bold"))
   
 
-if(SAVEFILES) ggplot2::ggsave(filename=file.path(SAVEPATH,"Subclones_PCA.pdf"), device="pdf", width=7, height=7)
+if(SAVEFILES) ggplot2::ggsave(filename=file.path(SAVEPATH,"Subclones_PCA.pdf"), device="pdf") #, width=7, height=7)
 ```
 
 ### 4. Differential Expression Analysis. 
@@ -334,8 +334,3 @@ annotation_colors = list(
 pheatmap(mat, annotation_col = anno, show_rownames = F, show_colnames = F,
          annotation_colors = annotation_colors)
 ```
-
-
-
-
-
