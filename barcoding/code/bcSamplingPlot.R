@@ -1,5 +1,10 @@
 library(reshape2)
 library(ggplot2)
+
+if (Sys.getenv("RSTUDIO") == "1") {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
+
 bcDat <- read.csv('../data/bcPlot.csv')
 bcNum <- read.csv('../data/bcCount_allTechReps.csv')
 
@@ -236,7 +241,8 @@ plot_propShared_byRep <- ggplot(sharingBCs_withinRep_melt_prop, aes(x=variable, 
         legend.title = element_text(size=14),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-plot_propShared_byRep + ggsave("SKMEL5_propShared_byReplicate.pdf", width = 4, height = 5)
+plot_propShared_byRep 
+ggsave("SKMEL5_propShared_byReplicate.pdf", width = 4, height = 5)
 plot_propShared_byRep_leg <- ggpubr::get_legend(plot_propShared_byRep)
 
 ggpubr::as_ggplot(plot_propShared_byRep_leg)
@@ -346,7 +352,7 @@ bcNum_prop_compare <- Rmisc::summarySE(bcNum_prop_test_melt, measurevar = "value
 bcNum_prop_compare$Sample <- factor(bcNum_prop_compare$Sample,
                                     levels = c('Untreated', 'Idling'))
 
-bcNum_prop_compare_sub <- bcNum_prop_compare[c(1:50),]
+bcNum_prop_compare_sub <- bcNum_prop_compare[c(1:48),]
 ggplot(bcNum_prop_compare_sub, aes(x=Barcode, y=value, group = Sample,
                               fill = Sample)) +
   geom_bar(stat = "identity", position = "dodge", color = "black", linewidth = 0.2) +
@@ -395,19 +401,19 @@ bcFC_order$l2FC <- log2(bcFC_order$mean.y/bcFC_order$mean.x)
 #                         BCnum = as.factor(c(seq(length(bcFC_order$l2FC)),
 #                                             seq(length(bcFC_order$l2FC[1:25])))))
 
-test_hist1 <- data.frame(x = bcFC_order$l2FC[1:25],
-                        Class = as.factor(rep("Sub", length(bcFC_order$l2FC[1:25]))),
-                        BCnum = as.factor(seq(length(bcFC_order$l2FC[1:25]))),
-                        Barcode = bcFC_order$Barcode[1:25])
+test_hist1 <- data.frame(x = bcFC_order$l2FC[1:24],
+                        Class = as.factor(rep("Sub", length(bcFC_order$l2FC[1:24]))),
+                        BCnum = as.factor(seq(length(bcFC_order$l2FC[1:24]))),
+                        Barcode = bcFC_order$Barcode[1:24])
 
 n <- dim(test_hist1)[1]
 # bw <- 3.49 * sd(test_hist1[, "x"]) * dim(test_hist1)[1]^(-1/3)
 bw = 1
 
 plt_hist_BCoverlay <- ggplot(test_hist1, aes(x=x)) + theme_bw() +
-  geom_histogram(aes(y= (..count..)/(n*bw), fill = BCnum),
+  geom_histogram(aes(y= (after_stat(count))/(n*bw), fill = BCnum),
                  binwidth = 1, color = "black", linewidth = 0.1) +
-  scale_fill_manual(values = rainbow(25)) +
+  scale_fill_manual(values = rainbow(24)) +
   geom_density(data = bcFC_order, aes(l2FC), fill = "grey",
                color = "black", alpha = 0.3) +
   xlab("Log2 Fold Change") + ylab("Density") +
@@ -419,7 +425,8 @@ plt_hist_BCoverlay <- ggplot(test_hist1, aes(x=x)) + theme_bw() +
     plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
     legend.title = element_text(size=12), axis.title=element_text(size=12))
 
-plt_hist_BCoverlay + ggsave("SKMEL5_barcode_FCdensity_bcOverlay.pdf", width = 3.5, height = 3)
+plt_hist_BCoverlay 
+ggsave("SKMEL5_barcode_FCdensity_bcOverlay.pdf", width = 3.5, height = 3)
 plt_hist_BCoverlay_leg <- ggpubr::get_legend(plt_hist_BCoverlay)
 ggpubr::as_ggplot(plt_hist_BCoverlay_leg)
 ggsave("SKMEL5_barcode_FCdensity_bcOverlay_leg.pdf")
