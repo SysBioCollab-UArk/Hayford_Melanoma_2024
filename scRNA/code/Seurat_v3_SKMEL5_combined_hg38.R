@@ -12,9 +12,13 @@ library(Hmisc)
 library(ggpubr)
 library(transport)
 
+if (Sys.getenv("RSTUDIO") == "1") {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
+
 # Pull this from the data I shared on Box (data_large)
-untreated <- Read10X(data.dir = "../data/Untreated/filtered_feature_bc_matrix/")
-idling <- Read10X(data.dir = "../data/Idling/filtered_feature_bc_matrix/")
+untreated <- Read10X(data.dir = "../data/Untreated/")
+idling <- Read10X(data.dir = "../data/Idling/")
 
 # Initialize the Seurat object with the raw (non-normalized data).
 untreated <- CreateSeuratObject(counts = untreated, project = "Untreated", min.cells = 3, min.features = 200)
@@ -36,7 +40,7 @@ untreated <- AddMetaData(untreated, lineageMeta_UT, col.name = "lineage")
 
 ## Idling
 cellMeta_idling <- idling@meta.data
-barcode_cell_df_I <- as.data.frame(t(read.csv("~/Documents/QuarantaLab/Treated_LineageBC_cellBC.csv")))
+barcode_cell_df_I <- as.data.frame(t(read.csv("../data/Treated_LineageBC_cellBC.csv")))
 colnames(barcode_cell_df_I) <- c("Barcode", "Cell Barcode")
 barcode_cell_I <- barcode_cell_df_I[-1,]
 barcode_cell_I$`Cell Barcode` <- paste(barcode_cell_I$`Cell Barcode`, "-1", sep="")
