@@ -8,7 +8,14 @@ require(Hmisc)
 # ============================================================================================================
 # ============================================================================================================
 
+# set working directory
+if (Sys.getenv("RSTUDIO") == "1") {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
+
 listDir = list.files("../data", pattern = "*.txt")
+
+listDir = paste("../data/", listDir, sep="")
 
 countIJ <- function(platefile){ 
   
@@ -271,6 +278,6 @@ ggplot(RSL3_UTvI_all, aes(x=conc, y=p, color=State, fill=State)) +
         legend.title = element_text(size=12),
         legend.position = "none",
         axis.title=element_text(size=12),
-        panel.grid = element_blank()) +
+        panel.grid = element_blank()) 
   ggsave("RSL3-all_DRC_UTvI_2021vis.pdf", width = 8, height = 3)
 
