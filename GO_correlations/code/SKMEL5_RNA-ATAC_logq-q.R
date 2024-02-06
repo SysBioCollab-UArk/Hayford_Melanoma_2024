@@ -15,6 +15,10 @@ library(TxDb.Hsapiens.UCSC.hg38.knownGene)
 library(svglite)
 txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
 
+if (Sys.getenv("RSTUDIO") == "1") {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
+
 ## RNAseq ##
 load(file="../data/untreatedIdling_DEA.RData")
 
@@ -61,7 +65,7 @@ ego_genesUp_CC <- clusterProfiler::enrichGO(gene  = genes_up_ENTREZID,
 ## Non-downsampled idling
 # load("/Volumes/Transcend/ATACseq/SKMEL5_ATAC_annotatedPeaks_uniqueShared.RData")
 ## Downsampled idling
-load("/Volumes/Transcend/ATACseq/SKMEL5_ATACsub25_annotatedPeaks_uniqueShared.RData")
+load("../../ATAC/data/SKMEL5_ATACsub25_annotatedPeaks_uniqueShared.RData")
 
 
 go_UT_BP <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, OrgDb = "org.Hs.eg.db", 
@@ -105,8 +109,8 @@ ggplot(Up_all_BP_complete_sorted, aes(x=logp.x, y=logp.y, label=Description)) +
   theme_bw() +
   labs(x="-Log(q-value) RNA GO Terms", y="-Log(q-value) ATAC GO Terms") +
   theme(axis.text=element_text(size=14), axis.title=element_text(size=14),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  ggsave("GO-RNA-ATACsub25_pvalComparison_BP.pdf", width = 8, height = 6)
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+ggsave("GO-RNA-ATACsub25_pvalComparison_BP.pdf", width = 8, height = 6)
 
 # MF
 RNA_Up_MF <- subset(ego_genesUp_MF@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
@@ -125,8 +129,8 @@ ggplot(Up_all_MF_complete_sorted, aes(x=logp.x, y=logp.y, label=Description)) +
   theme_bw() +
   labs(x="-Log(q-value) RNA GO Terms", y="-Log(q-value) ATAC GO Terms") +
   theme(axis.text=element_text(size=14), axis.title=element_text(size=14),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  ggsave("GO-RNA-ATACsub25_pvalComparison_MF.pdf", width = 8, height = 6)
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+ggsave("GO-RNA-ATACsub25_pvalComparison_MF.pdf", width = 8, height = 6)
 
 # CC
 RNA_Up_CC <- subset(ego_genesUp_CC@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
@@ -145,8 +149,8 @@ ggplot(Up_all_CC_complete_sorted, aes(x=logp.x, y=logp.y, label=Description)) +
   theme_bw() +
   labs(x="-Log(q-value) RNA GO Terms", y="-Log(q-value) ATAC GO Terms") +
   theme(axis.text=element_text(size=14), axis.title=element_text(size=14),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  ggsave("GO-RNA-ATACsub25_pvalComparison_CC.pdf", width = 8, height = 6)
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+ggsave("GO-RNA-ATACsub25_pvalComparison_CC.pdf", width = 8, height = 6)
 
 #### PUT ALL TOGETHER ####
 Up_all_BP_complete_sorted$GOtype <- "BP"
@@ -177,7 +181,7 @@ Up_all_GO$GOtype <- factor(Up_all_GO$GOtype, levels = c("BP", "MF", "CC"))
 ggscatter(Up_all_BP_complete_sorted, 
           x = "logp.x", y = "logp.y",
           add = "reg.line", size = 1) +
-  stat_cor(method = "spearman", aes(label = ..r.label..), size = 5) +
+  stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 5) +
   ggrepel::geom_label_repel(data = Up_all_BP_complete_sorted[1:10,],
                             aes(label = Description), size = 3) +
   theme_bw() +
@@ -186,13 +190,13 @@ ggscatter(Up_all_BP_complete_sorted,
   theme(axis.text=element_text(size=16), axis.title=element_text(size=16),
         strip.text.x = element_text(size=16), strip.text.y = element_text(size=16),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        legend.position = "none") + 
-  ggsave("RNA-ATACsub25_BP.svg", width = 7, height = 5)
+        legend.position = "none") 
+ggsave("RNA-ATACsub25_BP.svg", width = 7, height = 5)
 
 ggscatter(Up_all_MF_complete_sorted, 
           x = "logp.x", y = "logp.y",
           add = "reg.line", size = 1) +
-  stat_cor(method = "spearman", aes(label = ..r.label..), size = 5) +
+  stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 5) +
   ggrepel::geom_label_repel(data = Up_all_MF_complete_sorted[1:10,],
                             aes(label = Description), size = 3) +
   theme_bw() +
@@ -201,13 +205,13 @@ ggscatter(Up_all_MF_complete_sorted,
   theme(axis.text=element_text(size=16), axis.title=element_text(size=16),
         strip.text.x = element_text(size=16), strip.text.y = element_text(size=16),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        legend.position = "none") + 
-  ggsave("RNA-ATACsub25_MF.svg", width = 7, height = 5)
+        legend.position = "none") 
+ggsave("RNA-ATACsub25_MF.svg", width = 7, height = 5)
 
 ggscatter(Up_all_CC_complete_sorted, 
           x = "logp.x", y = "logp.y",
           add = "reg.line", size = 1) +
-  stat_cor(method = "spearman", aes(label = ..r.label..), size = 5) +
+  stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 5) +
   ggrepel::geom_label_repel(data = Up_all_CC_complete_sorted[1:10,],
                             aes(label = Description), size = 3) +
   theme_bw() +
@@ -216,6 +220,6 @@ ggscatter(Up_all_CC_complete_sorted,
   theme(axis.text=element_text(size=16), axis.title=element_text(size=16),
         strip.text.x = element_text(size=16), strip.text.y = element_text(size=16),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        legend.position = "none") + 
-  ggsave("RNA-ATACsub25_CC.svg", width = 7, height = 5)
+        legend.position = "none") 
+ggsave("RNA-ATACsub25_CC.svg", width = 7, height = 5)
 
