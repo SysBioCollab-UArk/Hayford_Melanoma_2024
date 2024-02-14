@@ -125,7 +125,7 @@ ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_CCState_leg.svg", width = 4, height = 
 # DimPlot(combined, reduction = "umap", group.by = "seurat_clusters") +
 #   theme_bw() + #scale_color_manual(values = c("blue", "red")) +
 #   theme(axis.text = element_text(size = 14), legend.position = "right",
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_clusters_leg.pdf", width = 5, height = 3)
 
 
@@ -198,16 +198,16 @@ phase_all$Condition <- factor(phase_all$Condition, levels = c("Untreated", "Idli
 
 
 # ggplot(phase_all, aes(x = Phase, group = Condition, color = Condition)) +
-#   theme_bw() + geom_bar(aes(fill=as.factor(Condition), y = (..count..)), 
+#   theme_bw() + geom_bar(aes(fill=as.factor(Condition), y = (..count..)),
 #                         position = "dodge", color = "black") +
 #   scale_fill_manual(values = c("red", "blue")) +
 #   labs(x = "Cell Cycle Phase", y = "Number of Cells") +
 #   theme(axis.text.y = element_text(size = 14),
 #         legend.position = "right", legend.text = element_text(size = 14),
-#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), 
+#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14),
 #         legend.title = element_blank(), axis.title=element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_cellCyclePhaseBreakdown_byCondition.pdf", width = 6, height = 4)
 
 # Percentages
@@ -237,10 +237,10 @@ phase_all_table_melt$Condition <- factor(phase_all_table_melt$Condition,
 #   labs(x = "Cell Cycle Phase", y = "Percentage of Cells") +
 #   theme(axis.text.y = element_text(size = 14),
 #         legend.position = "right", legend.text = element_text(size = 14),
-#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), 
+#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14),
 #         legend.title = element_blank(), axis.title=element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_cellCyclePhaseBreakdown_byCondition_percent.pdf", width = 6, height = 4)
 
 # ggplot(phase_all_table_melt, aes(x = Condition, y = value,
@@ -251,10 +251,10 @@ phase_all_table_melt$Condition <- factor(phase_all_table_melt$Condition,
 #   labs(x = "Condition", y = "Percentage of Cells") +
 #   theme(axis.text.y = element_text(size = 14),
 #         legend.position = "right", legend.text = element_text(size = 14),
-#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), 
+#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14),
 #         legend.title = element_blank(), axis.title=element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_cellCyclePhaseBreakdown_byPhase_percent.pdf", width = 6, height = 4)
 
 ### Get proportion of CC cells in each state
@@ -265,7 +265,7 @@ state_I$Condition = "Idling"
 state_all <- rbind(state_UT, state_I)
 state_all$Condition <- factor(state_all$Condition, levels = c("Untreated", "Idling"))
 
-
+# 
 # ggplot(state_all, aes(x = State, group = Condition, color = Condition)) +
 #   theme_bw() + geom_bar(aes(fill=as.factor(Condition), y = (..count..)),
 #                         position = "dodge", color = "black") +
@@ -297,7 +297,7 @@ state_all_table_melt <- melt(state_all_table, id.vars = c("State", "Condition"),
                              measure.vars = "Percent")
 state_all_table_melt$Condition <- factor(state_all_table_melt$Condition, 
                                          levels = c("Untreated", "Idling"))
-
+# 
 # ggplot(state_all_table_melt, aes(x = State, y = value,
 #                                  group = Condition, fill = Condition)) +
 #   theme_bw() + geom_bar(stat = "identity", position = "dodge", color = "black") +
@@ -337,7 +337,7 @@ I_cycling.markers <- FindMarkers(object = combined, ident.1 = 6,
 I_noncycling.markers <- FindMarkers(object = combined, ident.1 = c(0,2,5,7),
                                  ident.2 = 6, min.pct = 0.25)
 
-I_cycling_GO <- enrichGO(gene = rownames(subset(I_cycling.markers, avg_logFC > 0.5)),
+I_cycling_GO <- enrichGO(gene = rownames(subset(I_cycling.markers, avg_log2FC > 0.5)),
                          universe = row.names(combined@assays$RNA@data),
                          OrgDb = org.Hs.eg.db,
                          keyType = 'SYMBOL',
@@ -561,7 +561,7 @@ labels = c("1","2","3","4","5","6","7","8","9",
 #         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14), legend.text = element_text(size=10),
 #         axis.title=element_text(size=14), panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank()) +
+#         panel.grid.minor = element_blank())
 #   ggsave("umap_combined_lineageID_greater30_legendSpecial.pdf", width = 8, height = 5)
 
 tint <- data.frame(ifelse(combined@meta.data$lineageColored == "XXX", 0.1, 1),
@@ -608,7 +608,7 @@ ggsave("umap_combined_lineageID_tinted_legendOnly.svg", width = 2.5, height = 4)
 
 
 # ggplot(data = test_subset, aes(x = umap_1, y = umap_2, color = lineageColored, alpha = Tint1)) +
-#   geom_point(size = 0.8) + scale_alpha_continuous(range = c(0.1,1)) + 
+#   geom_point(size = 0.8) + scale_alpha_continuous(range = c(0.1,1)) +
 #   theme_bw() +
 #   scale_color_manual(values = cols1, labels = labels, name = "Barcode") +
 #   guides(alpha = "none") +
@@ -617,7 +617,7 @@ ggsave("umap_combined_lineageID_tinted_legendOnly.svg", width = 2.5, height = 4)
 #         axis.text.y = element_text(size = 14, colour = "black"),
 #         legend.position = "none", legend.text = element_text(size = 14),
 #         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
-#         legend.title = element_text(size=14), axis.title=element_text(size=14)) 
+#         legend.title = element_text(size=14), axis.title=element_text(size=14))
 #   ggsave("../figures/umap_combined_lineageID_tinted_legendSpecial.svg", width = 4, height = 3)
 
 # bcs <- c("CTGACAGACACTCTCAGTCT",
@@ -975,27 +975,27 @@ region_all_n <- data.frame(name = unique(region_all_table_n$name),
                                      paste("n =", as.character(region_all_table_n$num[3])),
                                      paste("n =", as.character(region_all_table_n$num[4]))))
 
-# ggplot(region_all_table, aes(x = name, y = freq,
-#                              group = State, fill = State)) +
-#   theme_classic() + geom_bar(stat = "identity", color = "black") +
-#   scale_fill_manual(values = c("green3", "gold")) +
-#   scale_y_continuous(name = "Percentage of Cells", labels = scales::percent) +
-#   scale_x_discrete(name = "Condition",
-#                    labels = c(expression(Untreated[large]), 
-#                               expression(Untreated[small]), 
-#                               expression(Idling[large]),
-#                               expression(Idling[small]))) +
-#   # labs(y = "Percentage of Cells") +
-#   # ggtitle("Cluster Cell Cycle State") +
-#   # geom_text(data = region_all_n,
-#   #           aes(name, label, label = label)) +
-#   theme(axis.text.y = element_text(size = 14),
-#         legend.position = "bottom", legend.text = element_text(size = 14),
-#         plot.title = element_text(size = 16, hjust = 0.5), 
-#         axis.text=element_text(size=14),
-#         legend.title = element_blank(), axis.title=element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-#   ggsave("SKMEL5_allClusters_CellCycleState_proportion.pdf", width = 6, height = 5)
+ggplot(region_all_table, aes(x = name, y = freq,
+                             group = State, fill = State)) +
+  theme_classic() + geom_bar(stat = "identity", color = "black") +
+  scale_fill_manual(values = c("green3", "gold")) +
+  scale_y_continuous(name = "Percentage of Cells", labels = scales::percent) +
+  scale_x_discrete(name = "Condition",
+                   labels = c(expression(Untreated[large]),
+                              expression(Untreated[small]),
+                              expression(Idling[large]),
+                              expression(Idling[small]))) +
+  # labs(y = "Percentage of Cells") +
+  # ggtitle("Cluster Cell Cycle State") +
+  # geom_text(data = region_all_n,
+  #           aes(name, label, label = label)) +
+  theme(axis.text.y = element_text(size = 14),
+        legend.position = "bottom", legend.text = element_text(size = 14),
+        plot.title = element_text(size = 16, hjust = 0.5),
+        axis.text=element_text(size=14),
+        legend.title = element_blank(), axis.title=element_text(size=14),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+ggsave("SKMEL5_allClusters_CellCycleState_proportion.pdf", width = 6, height = 5)
 
 
 ####

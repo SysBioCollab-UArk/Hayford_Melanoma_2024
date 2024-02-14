@@ -45,7 +45,7 @@ bcNum_UT_melt_sub <- subset(bcNum_UT_melt, BarcodeNumber %in% c(1:50))
 #         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14),
 #         legend.title = element_text(size=14), axis.title=element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_barcodeUT_rankAbundance.pdf", width = 8, height = 5)
 
 
@@ -66,7 +66,7 @@ bcNum_I_melt_sub <- subset(bcNum_I_melt, BarcodeNumber %in% c(1:50))
 #         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14),
 #         legend.title = element_text(size=14), axis.title=element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_barcodeI_rankAbundance.pdf", width = 8, height = 5)
 
 
@@ -126,7 +126,7 @@ ggsave("SKMEL5_numUniqueBC_byCondition.pdf") #, width = 4, height = 5)
 #         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=12),
 #         legend.title = element_text(size=12), axis.title=element_text(size=12),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_numUniqueBC_byCondition_noShared.pdf", width = 2.5, height = 5)
 
 ###
@@ -204,7 +204,7 @@ sharingBCs_melt_prop <-sharingBCs_melt %>% group_by(variable) %>%
 #   theme(axis.text = element_text(size = 12), axis.title=element_text(size=12),
 #         legend.position = "none", legend.text = element_text(size = 12),
 #         legend.title = element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_propShared_byCondition.pdf", width = 3, height = 5)
 
 sharingBCs_withinRep <- data.frame(Shared = c("3", "2", "1"),
@@ -314,7 +314,7 @@ bcNum_compare_sub <- subset(bcNum_compare, value > 1000)
 #         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14),
 #         legend.title = element_text(size=14), axis.title=element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_barcode_rankAbundance_comparison.pdf", width = 8, height = 5)
 
 
@@ -393,7 +393,7 @@ bcFC_order$l2FC <- log2(bcFC_order$mean.y/bcFC_order$mean.x)
 #     axis.text = element_text(size = 12),
 #     legend.position = "none", legend.text = element_text(size = 12),
 #     plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
-#     legend.title = element_text(size=12), axis.title=element_text(size=12)) +
+#     legend.title = element_text(size=12), axis.title=element_text(size=12)) 
 #   ggsave("SKMEL5_barcode_FCdensity.pdf", width = 4, height = 3)
 
 # test_hist <- data.frame(x = c(bcFC_order$l2FC, bcFC_order$l2FC[1:25]),
