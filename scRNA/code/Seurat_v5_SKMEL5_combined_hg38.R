@@ -483,7 +483,7 @@ dotplot(UT_large_GO, showCategory=20)
 # bc_30 <- Reduce(intersect, list(keep_UT_30$Var1, keep_I_30$Var1))
 
 # Use top25 untreated lineages
-load("top25BCs.RData")
+load("../data/top25BCs.RData")
 bcs_top25 <- as.character(unique(bcNum_prop_compare_sub$Barcode))
 bc_not <- setdiff(combined@meta.data$lineage, bcs_top25)
 test <- combined@meta.data
@@ -568,19 +568,19 @@ tint <- data.frame(ifelse(combined@meta.data$lineageColored == "XXX", 0.1, 1),
                    row.names = rownames(combined@meta.data))
 names(tint) <- "Tint"
 combined <- AddMetaData(combined, tint, 'Tint')
-# tint1 <- data.frame(ifelse(combined@meta.data$lineageColored == "CTGACAGACACTCTCAGTCT", 1, 0.1),
-#                     row.names = rownames(combined@meta.data))
-# names(tint1) <- "Tint1"
-# combined <- AddMetaData(combined, tint1, 'Tint1')
-test_subset <- FetchData(combined, vars = c("UMAP_1", "UMAP_2", "lineage", "S.Score", "G2M.Score",
+tint1 <- data.frame(ifelse(combined@meta.data$lineageColored == "CTGACAGACACTCTCAGTCT", 1, 0.1),
+                    row.names = rownames(combined@meta.data))
+names(tint1) <- "Tint1"
+combined <- AddMetaData(combined, tint1, 'Tint1')
+test_subset <- FetchData(combined, vars = c("umap_1", "umap_2", "lineage", "S.Score", "G2M.Score",
                                                  "Phase", "old.ident", "lineageColored", "Tint", "Tint1"))
 
 test_subset$lineageColored <- factor(test_subset$lineageColored, levels = unique(bcNum_prop_compare_sub$Barcode))
-plt <- ggplot(data = test_subset, aes(x = UMAP_1, y = UMAP_2, color = lineageColored, alpha = Tint)) +
+plt <- ggplot(data = test_subset, aes(x = umap_1, y = umap_2, color = lineageColored, alpha = Tint)) +
   geom_point() + scale_alpha_continuous(range = c(0.1,1)) + 
   theme_bw() +
   scale_color_manual(values = cols, labels = labels, name = "Barcode") +
-  guides(alpha = F) +
+  guides(alpha = "none") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         axis.text.x = element_text(size = 14, colour = "black"),
         axis.text.y = element_text(size = 14, colour = "black"),
@@ -590,27 +590,28 @@ plt <- ggplot(data = test_subset, aes(x = UMAP_1, y = UMAP_2, color = lineageCol
   guides(col = guide_legend(nrow = 13)) #+ ggtitle("CTGACAGACACTCTCAGTCT") +
 
 plt_leg <- ggpubr::get_legend(plt)
-as_ggplot(plt_leg) + ggsave("umap_combined_lineageID_tinted_legendOnly.svg", width = 2.5, height = 4)
+as_ggplot(plt_leg) 
+ggsave("umap_combined_lineageID_tinted_legendOnly.svg", width = 2.5, height = 4)
 
-# ggplot(data = test_subset, aes(x = UMAP_1, y = UMAP_2, color = lineageColored, alpha = Tint)) +
-#   geom_point(size = 0.8) + scale_alpha_continuous(range = c(0.1,1)) + 
+# ggplot(data = test_subset, aes(x = umap_1, y = umap_2, color = lineageColored, alpha = Tint)) +
+#   geom_point(size = 0.8) + scale_alpha_continuous(range = c(0.1,1)) +
 #   theme_bw() +
 #   scale_color_manual(values = cols, labels = labels, name = "Barcode") +
-#   guides(alpha = F) +
+#   guides(alpha = "none") +
 #   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
 #         axis.text.x = element_text(size = 14, colour = "black"),
 #         axis.text.y = element_text(size = 14, colour = "black"),
 #         legend.position = "none", legend.text = element_text(size = 14),
 #         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
-#         legend.title = element_text(size=14), axis.title=element_text(size=14)) 
+#         legend.title = element_text(size=14), axis.title=element_text(size=14))
 #   ggsave("../figures/umap_combined_lineageID_tinted_legendSpecial.svg", width = 3.5, height = 3)
 
 
-# ggplot(data = test_subset, aes(x = UMAP_1, y = UMAP_2, color = lineageColored, alpha = Tint1)) +
+# ggplot(data = test_subset, aes(x = umap_1, y = umap_2, color = lineageColored, alpha = Tint1)) +
 #   geom_point(size = 0.8) + scale_alpha_continuous(range = c(0.1,1)) + 
 #   theme_bw() +
 #   scale_color_manual(values = cols1, labels = labels, name = "Barcode") +
-#   guides(alpha = F) +
+#   guides(alpha = "none") +
 #   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
 #         axis.text.x = element_text(size = 14, colour = "black"),
 #         axis.text.y = element_text(size = 14, colour = "black"),
@@ -651,15 +652,15 @@ for (i in seq(25)){
                       row.names = rownames(combined@meta.data))
   names(tint1) <- "Tint1"
   combined <- AddMetaData(combined, tint1, 'Tint1')
-  test_subset1 <- FetchData(combined, vars = c("UMAP_1", "UMAP_2", "lineage", "S.Score", "G2M.Score",
+  test_subset1 <- FetchData(combined, vars = c("umap_1", "umap_2", "lineage", "S.Score", "G2M.Score",
                                               "Phase", "old.ident", "lineageColored", "Tint", "Tint1"))
   ggplot() +
     theme_bw() +
-    geom_density_2d(data = test_subset1, aes(x = UMAP_1, y = UMAP_2, 
+    geom_density_2d(data = test_subset1, aes(x = umap_1, y = umap_2, 
                                              color = old.ident), alpha = 0.4) +
     scale_color_manual(values = c("blue", "red")) +
     geom_point(data = subset(test_subset1, BCnum == i), shape = 21,
-               aes(x = UMAP_1, y = UMAP_2, fill = lineageColored),
+               aes(x = umap_1, y = umap_2, fill = lineageColored),
                size = 0.8, stroke = 0.1) + 
     scale_fill_manual(values = cols, labels = labels) +
     # scale_alpha_continuous(range = c(0.1,1)) +
@@ -671,8 +672,8 @@ for (i in seq(25)){
           legend.position = "none", legend.text = element_text(size = 12),
           plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
           legend.title = element_text(size=12), axis.title=element_text(size=12)) +
-    ggtitle(paste("Barcode",i)) +
-    ggsave(paste0("../figures/UMAP_top25BCs_byNum/umap_combined_lineageID_tinted_legendSpecial_top25_Barcode", i, ".svg"), width = 4, height = 3)
+    ggtitle(paste("Barcode",i)) 
+    ggsave(paste0("UMAP_top25BCs_byNum/umap_combined_lineageID_tinted_legendSpecial_top25_Barcode", i, ".svg"), width = 4, height = 3)
 }
 
 ####
@@ -681,13 +682,13 @@ combined_untreated <- subset(combined, subset = orig.ident == "Untreated")
 combined_idling <- subset(combined, subset = orig.ident == "Idling")
 
 UT_UMAP <- data.frame(combined_untreated@reductions$umap@cell.embeddings)
-UT_UMAP$UMAP1_dist <- (UT_UMAP$UMAP_1 - colMeans(UT_UMAP)[1])**2
-UT_UMAP$UMAP2_dist <- (UT_UMAP$UMAP_2 - colMeans(UT_UMAP)[2])**2
+UT_UMAP$UMAP1_dist <- (UT_UMAP$umap_1 - colMeans(UT_UMAP)[1])**2
+UT_UMAP$UMAP2_dist <- (UT_UMAP$umap_2 - colMeans(UT_UMAP)[2])**2
 UT_UMAP$dist <- sqrt(UT_UMAP$UMAP1_dist + UT_UMAP$UMAP2_dist)
 
 I_UMAP <- data.frame(combined_idling@reductions$umap@cell.embeddings)
-I_UMAP$UMAP1_dist <- (I_UMAP$UMAP_1 - colMeans(I_UMAP)[1])**2
-I_UMAP$UMAP2_dist <- (I_UMAP$UMAP_2 - colMeans(I_UMAP)[2])**2
+I_UMAP$UMAP1_dist <- (I_UMAP$umap_1 - colMeans(I_UMAP)[1])**2
+I_UMAP$UMAP2_dist <- (I_UMAP$umap_2 - colMeans(I_UMAP)[2])**2
 I_UMAP$dist <- sqrt(I_UMAP$UMAP1_dist + I_UMAP$UMAP2_dist)
 
 dist_mat <- data.frame(Condition = rep(c("Untreated", "Idling"), 
@@ -709,7 +710,7 @@ dist_mat_melt.summary$Condition <- factor(dist_mat_melt.summary$Condition,
 #   geom_jitter(width = 0.2, alpha = 0.1) +
 #   geom_crossbar(data = dist_mat_melt.summary, aes(ymin=Distance, ymax=Distance, color = Condition),
 #                 size=0.5, width = 0.5, color = "black") +
-#   # stat_summary(fun.data=mean_sdl, fun.args = list(mult=1), 
+#   # stat_summary(fun.data=mean_sdl, fun.args = list(mult=1),
 #   #              geom="errorbar", width=0.2) +
 #   # stat_summary(fun=mean, geom="point", shape=20, size=5) +
 #   # ylim(0,5) +
@@ -717,17 +718,17 @@ dist_mat_melt.summary$Condition <- factor(dist_mat_melt.summary$Condition,
 #   labs(x = "Condition", y = "Distance from Centroid") +
 #   theme(axis.text.y = element_text(size = 14),
 #         legend.position = "none", legend.text = element_text(size = 14),
-#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), 
+#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14),
 #         legend.title = element_text(size=14), axis.title=element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_conditions_distFromCentroid_byCondition.svg", width = 2.5, height = 5)
 
 
 ###
 
 df1 <- as.data.frame(combined@meta.data)
-df1$State <-  with(df1, ifelse(Phase %in% c("G2M", "S"), yes="Dividing", no="Nondividing"))
+df1$State <-  with(df1, ifelse(Phase %in% c("G2M", "S"), yes="Fast_Dividing", no="Slow_Dividing"))
 State <- subset(df1, select = c("State"))
 combined <- AddMetaData(combined, State, col.name = "State")
 save(combined, file = "combined_includingState.RData")
@@ -792,11 +793,11 @@ state_byBC <- as.data.frame(rbind(state_UT_byBC, state_I_byBC))
 #   ggtitle("Untreated Cell Cycle State") +
 #   theme(axis.text.y = element_text(size = 14),
 #         legend.position = "bottom", legend.text = element_text(size = 14),
-#         plot.title = element_text(size = 16, hjust = 0.5), 
+#         plot.title = element_text(size = 16, hjust = 0.5),
 #         axis.text=element_text(size=14),
 #         legend.title = element_blank(), axis.title=element_text(size=14),
 #         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 #   ggsave("SKMEL5_UT_CellCycleState_proportion.pdf", width = 8, height = 5)
 
 a <- subset(combined@meta.data, orig.ident == "Idling")
@@ -821,41 +822,41 @@ b %>%
 #   ggtitle("Idling Cell Cycle State") +
 #   theme(axis.text.y = element_text(size = 14),
 #         legend.position = "right", legend.text = element_text(size = 14),
-#         plot.title = element_text(size = 16, hjust = 0.5), 
+#         plot.title = element_text(size = 16, hjust = 0.5),
 #         axis.text=element_text(size=14),
 #         legend.title = element_blank(), axis.title=element_text(size=14),
 #         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 #   ggsave("SKMEL5_I_CellCycleState_proportion.pdf", width = 8, height = 5)
 
 
-ggplot(subset(state_byBC, State == "Dividing" & Condition == "Untreated"), aes(x = as.factor(BCnum), y = freq)) +
+ggplot(subset(state_byBC, State == "Fast_Dividing" & Condition == "Untreated"), aes(x = as.factor(BCnum), y = freq)) +
   theme_bw() + geom_bar(stat = "identity", position = "dodge", color = "black", fill = "red") +
   geom_hline(yintercept = 0.670, linetype = 2) +
   scale_y_continuous(labels = scales::percent) +
-  labs(x = "Barcode", y = "Percentage of Dividing Cells") +
+  labs(x = "Barcode", y = "Percentage of Fast Dividing Cells") +
   theme(axis.text.y = element_text(size = 14),
         legend.position = "right", legend.text = element_text(size = 14),
         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), 
         axis.text=element_text(size=14),
         legend.title = element_blank(), axis.title=element_text(size=14),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  ggsave("SKMEL5_UT_CellCycleState_onlyDividing_proportionWAverage.pdf", width = 6, height = 4)
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+ggsave("SKMEL5_UT_CellCycleState_onlyDividing_proportionWAverage.pdf", width = 6, height = 4)
 
-ggplot(subset(state_byBC, State == "Dividing" & Condition == "Idling"), aes(x = as.factor(BCnum), y = freq)) +
+ggplot(subset(state_byBC, State == "Fast_Dividing" & Condition == "Idling"), aes(x = as.factor(BCnum), y = freq)) +
   theme_bw() + geom_bar(stat = "identity", position = "dodge", color = "black", fill = "blue") +
   geom_hline(yintercept = 0.166, linetype = 2) +
   scale_y_continuous(labels = scales::percent) +
-  labs(x = "Barcode", y = "Percentage of Dividing Cells") +
+  labs(x = "Barcode", y = "Percentage of Fast Dividing Cells") +
   theme(axis.text.y = element_text(size = 14),
         legend.position = "right", legend.text = element_text(size = 14),
         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), 
         axis.text=element_text(size=14),
         legend.title = element_blank(), axis.title=element_text(size=14),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  ggsave("SKMEL5_I_CellCycleState_onlyDividing_proportionWAverage.pdf", width = 6, height = 4)
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+ggsave("SKMEL5_I_CellCycleState_onlyDividing_proportionWAverage.pdf", width = 6, height = 4)
 
 
 # ggplot(state_all_table_byBC_melt, aes(x = Condition, y = value,
@@ -866,31 +867,28 @@ ggplot(subset(state_byBC, State == "Dividing" & Condition == "Idling"), aes(x = 
 #   labs(x = "Condition", y = "Percentage of Cells") +
 #   theme(axis.text.y = element_text(size = 14),
 #         legend.position = "right", legend.text = element_text(size = 14),
-#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), 
+#         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14),
 #         legend.title = element_blank(), axis.title=element_text(size=14),
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 ####
 # K-means / Clusters
+DimPlot(combined, reduction = "umap", group.by = "seurat_clusters", label = TRUE)
+test_twoState <- FetchData(combined, vars = c("umap_1", "umap_2", "Phase", "State", "old.ident", "seurat_clusters"))
 
 test_KM <- test_twoState
 set.seed(10)
-kc <- kmeans(test_KM[,c("UMAP_1", "UMAP_2")], centers = 6)
+kc <- kmeans(test_KM[,c("umap_1", "umap_2")], centers = 6)
 test_KM$Kclusters <- kc$cluster
-ggplot(test_KM, aes(x=UMAP_1, y=UMAP_2, color = Kclusters)) +
+ggplot(test_KM, aes(x=umap_1, y=umap_2, color = Kclusters)) +
   geom_point()
 # Kclusters <- subset(test_KM, select = c("Kclusters"))
 # combined <- AddMetaData(combined, Kclusters, col.name = "Kclusters")
 # DimPlot(combined, reduction = "pca", group.by = "Kclusters")
 
 
-
-
-DimPlot(combined, reduction = "umap", group.by = "seurat_clusters")
-test_twoState <- FetchData(combined, vars = c("UMAP_1", "UMAP_2", "Phase", "State", "old.ident", "seurat_clusters"))
-
-plt_treat <- ggplot(test_twoState, aes(x = UMAP_1, y = UMAP_2)) +
+plt_treat <- ggplot(test_twoState, aes(x = umap_1, y = umap_2)) +
   geom_point(aes(color = factor(old.ident, levels = c("Untreated", "Idling"))), size = 1) + 
   scale_color_manual(name = "", values = c("red", "blue")) +
   theme_bw() + xlim(-11.5, 11.5) + ylim(-11.5, 11.5) +
@@ -900,11 +898,13 @@ plt_treat <- ggplot(test_twoState, aes(x = UMAP_1, y = UMAP_2)) +
         legend.position = "right", legend.text = element_text(size = 12),
         plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
         legend.title = element_text(size=12), axis.title=element_text(size=12)) 
-plt_treat + ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentPoint.svg", width = 4, height = 3)
+plt_treat 
+ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentPoint.svg", width = 4, height = 3)
 plt_treat_leg <- ggpubr::get_legend(plt_treat)
-as_ggplot(plt_treat_leg) + ggsave("UMAP_treatment_legend.svg", width = 2.5, height = 4)
+as_ggplot(plt_treat_leg) 
+ggsave("UMAP_treatment_legend.svg", width = 2.5, height = 4)
 
-plt_state <- ggplot(test_twoState, aes(x = UMAP_1, y = UMAP_2)) +
+plt_state <- ggplot(test_twoState, aes(x = umap_1, y = umap_2)) +
   geom_density_2d(aes(color = factor(old.ident, levels = c("Untreated", "Idling"))), alpha = 0.4) +
   scale_color_manual(name = "", values = c("red", "blue")) +
   geom_point(shape = 21,
@@ -918,20 +918,22 @@ plt_state <- ggplot(test_twoState, aes(x = UMAP_1, y = UMAP_2)) +
         legend.position = "right", legend.text = element_text(size = 12),
         plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
         legend.title = element_text(size=12), axis.title=element_text(size=12)) 
-plt_state + ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentDensity_CCStatePoint.svg", width = 4, height = 3)
+plt_state 
+ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentDensity_CCStatePoint.svg", width = 4, height = 3)
 plt_state_leg <- ggpubr::get_legend(plt_state)
-as_ggplot(plt_state_leg) + ggsave("UMAP_state_legend.svg", width = 2.5, height = 4)
+as_ggplot(plt_state_leg) 
+ggsave("UMAP_state_legend.svg", width = 2.5, height = 4)
 
 
 
 test_twoState_UT <- subset(test_twoState, old.ident == "Untreated")
 test_twoState_UT$Region <- with(test_twoState_UT, 
-                                ifelse(seurat_clusters %in% as.factor(c("1","3","5","8")), 
+                                ifelse(seurat_clusters %in% as.factor(c("1","3","4","9")), 
                                        yes="large", no="small"))
 
 test_twoState_I <- subset(test_twoState, old.ident == "Idling")
 test_twoState_I$Region <- with(test_twoState_I, 
-                             ifelse(seurat_clusters %in% as.factor(c("0","2","4")), 
+                             ifelse(seurat_clusters %in% as.factor(c("0","2","5","7")), 
                                     yes="large", no="small"))
 
 
@@ -998,24 +1000,24 @@ region_all_n <- data.frame(name = unique(region_all_table_n$name),
 
 ####
 
-EMD_data_UT <- subset(FetchData(combined, vars = c("UMAP_1", "UMAP_2", "old.ident", "BCnum", "lineageColored")), 
+EMD_data_UT <- subset(FetchData(combined, vars = c("umap_1", "umap_2", "old.ident", "BCnum", "lineageColored")), 
                       old.ident == "Untreated")
-D_UT <- dist(cbind(EMD_data_UT$UMAP_1, EMD_data_UT$UMAP_2), 
+D_UT <- dist(cbind(EMD_data_UT$umap_1, EMD_data_UT$umap_2), 
           diag=TRUE, upper=TRUE) 
 m_UT <- as.matrix(D_UT) # coerce dist object to a matrix
-dimnames(m_UT) <- list(1:length(EMD_data_UT$UMAP_1),
-                    1:length(EMD_data_UT$UMAP_2))
+dimnames(m_UT) <- list(1:length(EMD_data_UT$umap_1),
+                    1:length(EMD_data_UT$umap_2))
 xy_UT <- t(combn(colnames(m_UT), 2))
 df_UT_EMD <- data.frame(xy_UT, dist=m_UT[xy_UT])
 df_UT_EMD$Condition <- "Untreated"
 
-EMD_data_I <- subset(FetchData(combined, vars = c("UMAP_1", "UMAP_2", "old.ident", "BCnum", "lineageColored")), 
+EMD_data_I <- subset(FetchData(combined, vars = c("umap_1", "umap_2", "old.ident", "BCnum", "lineageColored")), 
                       old.ident == "Idling")
-D_I <- dist(cbind(EMD_data_I$UMAP_1, EMD_data_I$UMAP_2), 
+D_I <- dist(cbind(EMD_data_I$umap_1, EMD_data_I$umap_2), 
              diag=TRUE, upper=TRUE) 
 m_I <- as.matrix(D_I) # coerce dist object to a matrix
-dimnames(m_I) <- list(1:length(EMD_data_I$UMAP_1),
-                       1:length(EMD_data_I$UMAP_2))
+dimnames(m_I) <- list(1:length(EMD_data_I$umap_1),
+                       1:length(EMD_data_I$umap_2))
 xy_I <- t(combn(colnames(m_I), 2))
 df_I_EMD <- data.frame(xy_I, dist=m_I[xy_I])
 df_I_EMD$Condition <- "Idling"
@@ -1040,7 +1042,7 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
         axis.text.y = element_text(size = 12, colour = "black"),
         legend.position = "none", legend.text = element_text(size = 12),
         plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
-        legend.title = element_text(size=12), axis.title=element_text(size=12)) +
+        legend.title = element_text(size=12), axis.title=element_text(size=12)) 
   ggsave("ECDF_UT-I_withEMD.pdf", width = 4, height = 3)
 
 # ## BC-by-BC ECDF compared to Treatment condition
@@ -1048,11 +1050,11 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 # for (i in seq(25)[-8]){
 #   # print(i)
 #   bcSub <- subset(EMD_data_UT, BCnum == i)
-#   D_bcSub <- dist(cbind(bcSub$UMAP_1, bcSub$UMAP_2), 
+#   D_bcSub <- dist(cbind(bcSub$umap_1, bcSub$umap_2), 
 #                diag=TRUE, upper=TRUE) 
 #   m_bcSub <- as.matrix(D_bcSub) # coerce dist object to a matrix
-#   dimnames(m_bcSub) <- list(1:length(bcSub$UMAP_1),
-#                          1:length(bcSub$UMAP_2))
+#   dimnames(m_bcSub) <- list(1:length(bcSub$umap_1),
+#                          1:length(bcSub$umap_2))
 #   xy_bcSub <- t(combn(colnames(m_bcSub), 2))
 #   df_bcSub_EMD <- data.frame(xy_bcSub, dist=m_bcSub[xy_bcSub])
 #   df_bcSub_EMD$BCnum <- i
@@ -1069,7 +1071,7 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 #           legend.position = "none", legend.text = element_text(size = 12),
 #           plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
 #           legend.title = element_text(size=12), axis.title=element_text(size=12)) +
-#     ggtitle(paste("Barcode",i)) +
+#     ggtitle(paste("Barcode",i)) 
 #     ggsave(paste0("ECDF_top25BCs_byNum/ecdf_combined_lineageID_top25_Barcode", i, ".svg"), width = 4, height = 3)
 # }
 # 
@@ -1079,11 +1081,11 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 # for (i in seq(25)[-8]){
 #   # print(i)
 #   bcSub <- subset(EMD_data_UT, BCnum == i)
-#   D_bcSub <- dist(cbind(bcSub$UMAP_1, bcSub$UMAP_2), 
+#   D_bcSub <- dist(cbind(bcSub$umap_1, bcSub$umap_2), 
 #                   diag=TRUE, upper=TRUE) 
 #   m_bcSub <- as.matrix(D_bcSub) # coerce dist object to a matrix
-#   dimnames(m_bcSub) <- list(1:length(bcSub$UMAP_1),
-#                             1:length(bcSub$UMAP_2))
+#   dimnames(m_bcSub) <- list(1:length(bcSub$umap_1),
+#                             1:length(bcSub$umap_2))
 #   xy_bcSub <- t(combn(colnames(m_bcSub), 2))
 #   df_bcSub_EMD <- data.frame(xy_bcSub, dist=m_bcSub[xy_bcSub])
 #   df_bcSub_EMD$BCnum <- i
@@ -1105,7 +1107,7 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 #         legend.position = "none", legend.text = element_text(size = 12),
 #         plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
 #         legend.title = element_text(size=12), axis.title=element_text(size=12)) +
-#   ggtitle("Untreated Barcode Distribution") +
+#   ggtitle("Untreated Barcode Distribution") 
 #   ggsave(paste0("ECDF_top25BCs_plottedTogether_UT.svg"), width = 4, height = 3)
 # 
 # 
@@ -1113,11 +1115,11 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 # for (i in seq(25)[-8]){
 #   # print(i)
 #   bcSub <- subset(EMD_data_I, BCnum == i)
-#   D_bcSub <- dist(cbind(bcSub$UMAP_1, bcSub$UMAP_2), 
+#   D_bcSub <- dist(cbind(bcSub$umap_1, bcSub$umap_2), 
 #                   diag=TRUE, upper=TRUE) 
 #   m_bcSub <- as.matrix(D_bcSub) # coerce dist object to a matrix
-#   dimnames(m_bcSub) <- list(1:length(bcSub$UMAP_1),
-#                             1:length(bcSub$UMAP_2))
+#   dimnames(m_bcSub) <- list(1:length(bcSub$umap_1),
+#                             1:length(bcSub$umap_2))
 #   xy_bcSub <- t(combn(colnames(m_bcSub), 2))
 #   df_bcSub_EMD <- data.frame(xy_bcSub, dist=m_bcSub[xy_bcSub])
 #   df_bcSub_EMD$BCnum <- i
@@ -1134,7 +1136,7 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 #           legend.position = "none", legend.text = element_text(size = 12),
 #           plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
 #           legend.title = element_text(size=12), axis.title=element_text(size=12)) +
-#     ggtitle(paste("Barcode",i)) +
+#     ggtitle(paste("Barcode",i)) 
 #     ggsave(paste0("ECDF_top25BCs_byNum/ecdf_combined_lineageID_top25_Barcode", i, ".svg"), width = 4, height = 3)
 # }
 # 
@@ -1144,11 +1146,11 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 # for (i in seq(25)[-8]){
 #   # print(i)
 #   bcSub <- subset(EMD_data_I, BCnum == i)
-#   D_bcSub <- dist(cbind(bcSub$UMAP_1, bcSub$UMAP_2), 
+#   D_bcSub <- dist(cbind(bcSub$umap_1, bcSub$umap_2), 
 #                   diag=TRUE, upper=TRUE) 
 #   m_bcSub <- as.matrix(D_bcSub) # coerce dist object to a matrix
-#   dimnames(m_bcSub) <- list(1:length(bcSub$UMAP_1),
-#                             1:length(bcSub$UMAP_2))
+#   dimnames(m_bcSub) <- list(1:length(bcSub$umap_1),
+#                             1:length(bcSub$umap_2))
 #   xy_bcSub <- t(combn(colnames(m_bcSub), 2))
 #   df_bcSub_EMD <- data.frame(xy_bcSub, dist=m_bcSub[xy_bcSub])
 #   df_bcSub_EMD$BCnum <- i
@@ -1171,7 +1173,7 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 #         legend.position = "none", legend.text = element_text(size = 12),
 #         plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
 #         legend.title = element_text(size=12), axis.title=element_text(size=12)) +
-#   ggtitle("Idling Barcode Distribution") +
+#   ggtitle("Idling Barcode Distribution") 
 #   ggsave(paste0("ECDF_top25BCs_plottedTogether_I.svg"), width = 4, height = 3)
 # 
 # 
@@ -1205,7 +1207,7 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 #         legend.position = "none", legend.text = element_text(size = 12),
 #         plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
 #         legend.title = element_text(size=12), axis.title=element_text(size=12)) +
-#   # ggtitle("Idling Barcode Distribution") +
+#   # ggtitle("Idling Barcode Distribution") 
 #   ggsave(paste0("EMD_top25BCs_UT-I_plottedTogether.pdf"), width = 8, height = 4)
 # 
 # ## Do EMD fold change plot
@@ -1220,7 +1222,7 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 #         legend.position = "none", legend.text = element_text(size = 12),
 #         plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
 #         legend.title = element_text(size=12), axis.title=element_text(size=12)) +
-#   # ggtitle("Idling Barcode Distribution") +
+#   # ggtitle("Idling Barcode Distribution") 
 #   ggsave(paste0("EMD_top25BCs_UT-I_FC_plottedTogether.pdf"), width = 8, height = 4)
 # 
 # ##
@@ -1247,5 +1249,5 @@ ggplot(df_all_EMD_sample, aes(dist, color = Condition)) +
 #         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
 #         axis.text=element_text(size=14), legend.text = element_text(size=10),
 #         axis.title=element_text(size=14), panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank()) +
+#         panel.grid.minor = element_blank()) 
 #   ggsave("umap_combined_lineageID.svg", width = 8, height = 6)
