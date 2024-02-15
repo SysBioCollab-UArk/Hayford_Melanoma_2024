@@ -338,7 +338,7 @@ I_noncycling.markers <- FindMarkers(object = combined, ident.1 = c(0,2,5,7),
                                  ident.2 = 6, min.pct = 0.25)
 
 I_cycling_GO <- enrichGO(gene = rownames(subset(I_cycling.markers, avg_log2FC > 0.5)),
-                         universe = row.names(combined@assays$RNA@data),
+                         universe = Features(combined[["RNA"]]),
                          OrgDb = org.Hs.eg.db,
                          keyType = 'SYMBOL',
                          ont = "BP",
@@ -346,11 +346,12 @@ I_cycling_GO <- enrichGO(gene = rownames(subset(I_cycling.markers, avg_log2FC > 
                          pvalueCutoff  = 0.01,
                          qvalueCutoff  = 0.05)
 
+library(enrichplot)
 dotplot(I_cycling_GO, showCategory=10) 
 ggsave("Idling_smallClusterGO_BP.pdf", width = 6, height = 4)
 
-I_noncycling_GO <- enrichGO(gene = rownames(subset(I_noncycling.markers, avg_logFC > 0.5)),
-                         universe = row.names(combined@assays$RNA@data),
+I_noncycling_GO <- enrichGO(gene = rownames(subset(I_noncycling.markers, avg_log2FC > 0.5)),
+                         universe = Features(combined[["RNA"]]),
                          OrgDb = org.Hs.eg.db,
                          keyType = 'SYMBOL',
                          ont = "CC",
@@ -366,8 +367,8 @@ I_markers <- FindMarkers(object = combined, ident.1 = c(0,2,5,6,7),
 UT_markers <- FindMarkers(object = combined, ident.1 = c(1,3,4,8,9),
                                   ident.2 = c(0,2,5,6,7), min.pct = 0.25)
 
-I_GO <- enrichGO(gene = rownames(subset(I_markers, avg_logFC > 0.5)),
-                            universe = row.names(combined@assays$RNA@data),
+I_GO <- enrichGO(gene = rownames(subset(I_markers, avg_log2FC > 0.5)),
+                            universe = Features(combined[["RNA"]]),
                             OrgDb = org.Hs.eg.db,
                             keyType = 'SYMBOL',
                             ont = "BP",
@@ -375,10 +376,11 @@ I_GO <- enrichGO(gene = rownames(subset(I_markers, avg_logFC > 0.5)),
                             pvalueCutoff  = 0.01,
                             qvalueCutoff  = 0.05)
 
-dotplot(I_GO, showCategory=10) + ggsave("IdlingGO_BP.pdf", width = 8, height = 4)
+dotplot(I_GO, showCategory=10) 
+ggsave("IdlingGO_BP.pdf", width = 8, height = 4)
 
-UT_GO <- enrichGO(gene = rownames(subset(UT_markers, avg_logFC > 0.5)),
-                 universe = row.names(combined@assays$RNA@data),
+UT_GO <- enrichGO(gene = rownames(subset(UT_markers, avg_log2FC > 0.5)),
+                 universe = Features(combined[["RNA"]]),
                  OrgDb = org.Hs.eg.db,
                  keyType = 'SYMBOL',
                  ont = "CC",
@@ -394,8 +396,8 @@ UT_outcast.markers <- FindMarkers(object = combined, ident.1 = 8,
 UT_rest.markers <- FindMarkers(object = combined, ident.1 = c(1,3,4,9),
                           ident.2 = 8, min.pct = 0.25)
 
-UT_outcast_GO <- enrichGO(gene = rownames(subset(UT_outcast.markers, avg_logFC > 0.5)),
-                  universe = row.names(combined@assays$RNA@data),
+UT_outcast_GO <- enrichGO(gene = rownames(subset(UT_outcast.markers, avg_log2FC > 0.5)),
+                  universe = Features(combined[["RNA"]]),
                   OrgDb = org.Hs.eg.db,
                   keyType = 'SYMBOL',
                   ont = "BP",
@@ -403,10 +405,11 @@ UT_outcast_GO <- enrichGO(gene = rownames(subset(UT_outcast.markers, avg_logFC >
                   pvalueCutoff  = 0.01,
                   qvalueCutoff  = 0.05)
 
-dotplot(UT_outcast_GO, showCategory=10) + ggsave("Untreated_smallClusterGO_BP.pdf", width = 9, height = 4)
+dotplot(UT_outcast_GO, showCategory=10, label_format = 60) 
+ggsave("Untreated_smallClusterGO_BP.pdf", width = 9, height = 4)
 
-UT_rest_GO <- enrichGO(gene = rownames(subset(UT_rest.markers, avg_logFC > 0.5)),
-                          universe = row.names(combined@assays$RNA@data),
+UT_rest_GO <- enrichGO(gene = rownames(subset(UT_rest.markers, avg_log2FC > 0.5)),
+                          universe = Features(combined[["RNA"]]),
                           OrgDb = org.Hs.eg.db,
                           keyType = 'SYMBOL',
                           ont = "CC",
@@ -422,8 +425,8 @@ I_small.markers <- FindMarkers(object = combined, ident.1 = 6,
 UT_small.markers <- FindMarkers(object = combined, ident.1 = 8,
                                ident.2 = 6, min.pct = 0.25)
 
-I_small_GO <- enrichGO(gene = rownames(subset(I_small.markers, avg_logFC > 0.5)),
-                          universe = row.names(combined@assays$RNA@data),
+I_small_GO <- enrichGO(gene = rownames(subset(I_small.markers, avg_log2FC > 0.5)),
+                          universe = Features(combined[["RNA"]]),
                           OrgDb = org.Hs.eg.db,
                           keyType = 'SYMBOL',
                           ont = "CC",
@@ -433,8 +436,8 @@ I_small_GO <- enrichGO(gene = rownames(subset(I_small.markers, avg_logFC > 0.5))
 
 dotplot(I_small_GO, showCategory=20)
 
-UT_small_GO <- enrichGO(gene = rownames(subset(UT_small.markers, avg_logFC > 0.5)),
-                       universe = row.names(combined@assays$RNA@data),
+UT_small_GO <- enrichGO(gene = rownames(subset(UT_small.markers, avg_log2FC > 0.5)),
+                       universe = Features(combined[["RNA"]]),
                        OrgDb = org.Hs.eg.db,
                        keyType = 'SYMBOL',
                        ont = "CC",
@@ -450,8 +453,8 @@ I_large.markers <- FindMarkers(object = combined, ident.1 = c(0,2,5,7),
 UT_large.markers <- FindMarkers(object = combined, ident.1 = c(1,3,4,9),
                                 ident.2 = c(0,2,5,7), min.pct = 0.25)
 
-I_large_GO <- enrichGO(gene = rownames(subset(I_large.markers, avg_logFC > 0.5)),
-                       universe = row.names(combined@assays$RNA@data),
+I_large_GO <- enrichGO(gene = rownames(subset(I_large.markers, avg_log2FC > 0.5)),
+                       universe = Features(combined[["RNA"]]),
                        OrgDb = org.Hs.eg.db,
                        keyType = 'SYMBOL',
                        ont = "CC",
@@ -461,8 +464,8 @@ I_large_GO <- enrichGO(gene = rownames(subset(I_large.markers, avg_logFC > 0.5))
 
 dotplot(I_large_GO, showCategory=20)
 
-UT_large_GO <- enrichGO(gene = rownames(subset(UT_large.markers, avg_logFC > 0.5)),
-                        universe = row.names(combined@assays$RNA@data),
+UT_large_GO <- enrichGO(gene = rownames(subset(UT_large.markers, avg_log2FC > 0.5)),
+                        universe = Features(combined[["RNA"]]),
                         OrgDb = org.Hs.eg.db,
                         keyType = 'SYMBOL',
                         ont = "CC",
