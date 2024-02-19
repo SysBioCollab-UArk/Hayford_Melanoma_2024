@@ -2,10 +2,14 @@ library(dplyr)
 library(ggplot2)
 library(Seurat)
 
+if (Sys.getenv("RSTUDIO") == "1") {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
+
 load("combined_includingState.RData")
 DimPlot(combined, reduction = "umap", group.by = "seurat_clusters")
 
-load("top25BCs.RData")
+load("../data/top25BCs.RData")
 bcs_top25 <- as.character(unique(bcNum_prop_compare_sub$Barcode))
 bc_not <- setdiff(combined@meta.data$lineage, bcs_top25)
 test <- combined@meta.data
@@ -19,19 +23,19 @@ t2$BCnum <- as.integer(factor(t2$lineageColored, levels = unique(bcNum_prop_comp
 BCnum <- subset(t2, select = c("BCnum"))
 combined <- AddMetaData(combined, BCnum, col.name = "BCnum")
 
-df <- FetchData(combined, vars = c("UMAP_1", "UMAP_2", "orig.ident", "lineage", "lineageColored", "seurat_clusters", "BCnum"))
+df <- FetchData(combined, vars = c("umap_1", "umap_2", "orig.ident", "lineage", "lineageColored", "seurat_clusters", "BCnum"))
 # Convert Seurat clusters to meta-clusters
 df1 <- df %>% 
   mutate(meta_cluster = case_when(
-    seurat_clusters %in% c("7") ~ 'UT_S',
+    seurat_clusters %in% c("8") ~ 'UT_S',
     seurat_clusters %in% c("6") ~ 'I_S',
-    seurat_clusters %in% c("0","2","4") ~ 'I_L',
+    seurat_clusters %in% c("0","2","5","7") ~ 'I_L',
     TRUE ~ 'UT_L' ) )
 
 # Add large vs small information
 df2 <- df1 %>% 
   mutate(cluster_size = case_when(
-    seurat_clusters %in% c("7","6") ~ 'Small',
+    seurat_clusters %in% c("8","6") ~ 'Small',
     TRUE ~ 'Large' ) )
 
 # # Percentages
@@ -158,12 +162,12 @@ ggplot(subset(meta_cluster_byBC_x, cluster_size == "Small"), aes(x = as.factor(B
 #         axis.text=element_text(size=12),
 #         legend.title = element_blank(), axis.title=element_text(size=12),
 #         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 #   ggsave(".", width = 10, height =10)
 
 ####### Correlation
 
-load("~/Documents/QuarantaLab/barcodeFC_forCorPlot.RData")
+load("../data/barcodeFC_forCorPlot.RData")
 names(test_hist1) <- c("FC", "Class", "BCnum", "lineage")
 bcFC <- test_hist1[,c("lineage", "BCnum", "FC")]
 
@@ -183,7 +187,7 @@ state_I_byBC <- state_I_table_byBC %>%
   dplyr::group_by(BCnum) %>%
   dplyr::mutate(freq = n / sum(n))
 state_I_byBC$Condition <- "Idling"
-state_bc_I <- as.data.frame(subset(state_I_byBC, State == "Dividing"))
+state_bc_I <- as.data.frame(subset(state_I_byBC, State == "Fast_Dividing"))
 state_bc_I <- subset(state_bc_I, BCnum != "NA")
 state_bc_I_sub <- state_bc_I[,c("BCnum", "freq")]
 
@@ -194,7 +198,7 @@ ggscatter(compareBCs_top25, x="prop_I",y="FC", add="reg.line", size=1) +
   stat_cor(method="pearson", aes(label = ..r.label..), size = 5) +
   ggrepel::geom_label_repel(aes(label=BCnum)) +
   scale_x_continuous(labels = scales::percent) +
-  labs(x="Percentage of Cycling Cells in Idling", 
+  labs(x="Percentage of Fast-Diving Idling DTPs", 
        y=expression(Log[2]~"Barcode Fold Change")) +
-  theme(axis.text = element_text(size = 14)) +
-  ggsave("Idling_bcFC_correlation.pdf", width = 6, height = 4)
+  theme(axis.text = element_text(size = 14)) 
+ggsave("Idling_bcFC_correlation.pdf", width = 6, height = 4)
