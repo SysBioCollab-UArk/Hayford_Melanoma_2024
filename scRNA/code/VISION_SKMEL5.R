@@ -3,6 +3,10 @@ library(Seurat)
 library(limma)
 library(stringr)
 
+if (Sys.getenv("RSTUDIO") == "1") {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
+
 load("combined_includingState.RData")
 
 ## Run VISION Analysis
@@ -17,7 +21,8 @@ scaled_counts <- t(t(counts) / n.umi) * median(n.umi)
 
 # HALLMARK GENES
 gmt_files <- list.files(path = '../data/VISION_hallmark/', pattern = "\\.gmt$")
-vis <- Vision(data = counts, signatures = gmt_files, meta = meta)
+gmt_files1 <- paste0("../data/VISION_hallmark/", gmt_files, sep = "")
+vis <- Vision(data = counts, signatures = gmt_files1, meta = meta)
 vis <- analyze(vis)
 visScores <- as.data.frame(getSignatureScores(vis))
 
@@ -29,8 +34,8 @@ combined_VISION <- AddMetaData(object = combined,
 hallmark_metrics <- paste0("HALLMARK_", removeExt(gmt_files))
 
 combined_plotDat <- FetchData(combined_VISION, 
-                         vars = c("UMAP_1", "UMAP_2", "lineage", "Phase", "State", "old.ident",
-                                  hallmark_metrics, "HALLMARK_KRAS_SIGNALING",
+                         vars = c("umap_1", "umap_2", "lineage", "Phase", "State", "old.ident",
+                                  hallmark_metrics, "HALLMARK_KRAS_SIGNALING", 
                                   "HALLMARK_UV_RESPONSE"))
 
 umap_vals <- as.data.frame(Embeddings(combined, reduction = "umap"))
@@ -76,7 +81,9 @@ plt_hallmarks <- ggplot(combined_dat_hallmarks_melt, aes(x=value, color = Kmeans
         legend.position = "right", axis.text = element_text(size = 18), axis.title = element_text(size = 18)) +
   xlab("Signature Score") + ylab("Density") 
 
-plt_hallmarks + ggsave("allHallmarks_acrossSKMEL5clusters.svg", width = 18, height = 24)
+plt_hallmarks 
+ggsave("allHallmarks_acrossSKMEL5clusters.svg", width = 18, height = 24)
 plt_hallmarks_leg <- ggpubr::get_legend(plt_hallmarks)
-as_ggplot(plt_hallmarks_leg) + ggsave("allHallmarks_acrossSKMEL5clusters_legend.svg",
+as_ggplot(plt_hallmarks_leg) 
+ggsave("allHallmarks_acrossSKMEL5clusters_legend.svg",
                                       width = 6, height = 4)
