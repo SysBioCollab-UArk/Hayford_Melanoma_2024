@@ -87,3 +87,26 @@ plt_hallmarks_leg <- ggpubr::get_legend(plt_hallmarks)
 as_ggplot(plt_hallmarks_leg) 
 ggsave("allHallmarks_acrossSKMEL5clusters_legend.svg",
                                       width = 6, height = 4)
+
+combined_dat_hallmarks_melt_subset <- subset(combined_dat_hallmarks_melt, variable == c("GLYCOLYSIS", "OXIDATIVE_PHOSPHORYLATION", 
+                                                                                        "DNA_REPAIR", "FATTY_ACID_METABOLISM",
+                                                                                        "P53_PATHWAY", "REACTIVE_OXYGEN_SPECIES_PATHWAY"))
+
+combined_dat_hallmarks_melt_subset$variable <- gsub("REACTIVE_OXYGEN_SPECIES_PATHWAY", "ROS_PATHWAY", combined_dat_hallmarks_melt_subset$variable)
+
+plt_hallmarks_sub <- ggplot(combined_dat_hallmarks_melt_subset, aes(x=value, color = Kmeans, fill = Kmeans)) +
+  geom_density(alpha = 0.5) + facet_wrap(~variable, ncol = 6, scales = "free") + theme_bw() +
+  scale_color_manual(values = c("magenta", "gold", "skyblue"), 
+                     labels = c("UTS","UTL","Idling"), name = "Clusters") +
+  scale_fill_manual(values = c("magenta", "gold", "skyblue"), 
+                    labels = c("UTS","UTL","Idling"), name = "Clusters") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        legend.position = "right", axis.text = element_text(size = 18), axis.title = element_text(size = 18)) +
+  xlab("Signature Score") + ylab("Density") 
+
+plt_hallmarks_sub
+ggsave("subsetHallmarks_acrossSKMEL5clusters.svg", width = 18, height = 4)
+plt_hallmarks_leg_sub <- ggpubr::get_legend(plt_hallmarks_sub)
+as_ggplot(plt_hallmarks_leg_sub) 
+ggsave("subsetHallmarks_acrossSKMEL5clusters_legend.svg",
+       width = 6, height = 4)
