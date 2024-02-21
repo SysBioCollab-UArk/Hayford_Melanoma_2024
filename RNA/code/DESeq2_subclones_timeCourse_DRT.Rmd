@@ -19,7 +19,7 @@ Read the raw counts file processed by featureCounts. The fastq files were aligne
 ```{r Installation}
 pkgs <- c("BiocManager","DESeq2","org.Hs.eg.db","clusterProfiler","HDO.db",
           "pheatmap","ggnewscale","PoiClaClu","enrichR","gtable","Rmisc")
-source("getReqdPkgs.r")
+source("../../general_R_code/getReqdPkgs.r")
 getReqdPkgs(pkgs)
 ```
 
