@@ -8,11 +8,23 @@
 
   - #### <ins>FIGURE 1</ins>: 
 
-    xxx
+    **Panel A**: In the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, run ``Seurat_v5_SKMEL5_combined_hg38.R``, which pulls data from [scRNA/data/Idling](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data/Idling) and [scRNA/data/Untreated](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data/Untreated) for the ``barcodes.tsv.gz``, ``features.tsv.gz``, and ``matrix.mtx.gz`` files for idling and untreated conditions, respectively, and lineage information from ``Treated_LineageBC_cellBC.csv`` and``Untreated_LineageBC_cellBC.csv`` in [scRNA/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data).
+    
+    **Panel B**: In the [RNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/RNA/code) directory, run ``analysis_subclones.R``, which pulls data from ``featureCounts_matrix_all.csv`` in [RNA/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/RNA/data).
+    
+    **Panel C**: In the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, run ``VISION_SKMEL5.R``, which pulls data from ``combined_includingState.RData`` on a local drive and VISION hallmark data from [scRNA/data/VISION_hallmark](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data/VISION_hallmark).
+    
+    **Panel D**: In the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, run ``Seurat_v5_SKMEL5_combined_hg38.R``, which pulls data from [scRNA/data/Idling](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data/Idling) and [scRNA/data/Untreated](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data/Untreated) for the ``barcodes.tsv.gz``, ``features.tsv.gz``, and ``matrix.mtx.gz`` files for idling and untreated conditions, respectively, and lineage information from ``Treated_LineageBC_cellBC.csv`` and``Untreated_LineageBC_cellBC.csv`` in [scRNA/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data).
+    
+    **Panel E**: In the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, run ``Seurat_v5_SKMEL5_combined_hg38.R``, which pulls data from [scRNA/data/Idling](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data/Idling) and [scRNA/data/Untreated](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data/Untreated) for the ``barcodes.tsv.gz``, ``features.tsv.gz``, and ``matrix.mtx.gz`` files for idling and untreated conditions, respectively, and lineage information from ``Treated_LineageBC_cellBC.csv`` and``Untreated_LineageBC_cellBC.csv`` in [scRNA/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data).
 
   - #### <ins>FIGURE 2</ins>: 
 
-    xxx
+    **Panel A**: In the [barcoding/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/barcoding/code) directory, run ``bcSamplingPlot.R``, which pulls data from ``bcPlot.csv`` and ``bcCount_allTechReps.csv`` files in [barcoding/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/barcoding/data).
+    
+    **Panel B**: In the [barcoding/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/barcoding/code) directory, run ``bcSamplingPlot.R``, which pulls data from ``bcPlot.csv`` and ``bcCount_allTechReps.csv`` files in [barcoding/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/barcoding/data).
+    
+    
 
   - #### <ins>FIGURE 3</ins>: 
 
