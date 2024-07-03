@@ -2,6 +2,8 @@ library(VISION)
 library(Seurat)
 library(limma)
 library(stringr)
+library(ggplot2)
+library(ggpubr)
 
 if (Sys.getenv("RSTUDIO") == "1") {
   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
