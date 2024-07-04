@@ -675,6 +675,9 @@ for (i in seq(25)){
           plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
           legend.title = element_text(size=12), axis.title=element_text(size=12)) +
     ggtitle(paste("Barcode",i)) 
+    if (!dir.exists("UMAP_top25BCs_byNum")){
+      dir.create("UMAP_top25BCs_byNum")
+    }
     ggsave(paste0("UMAP_top25BCs_byNum/umap_combined_lineageID_tinted_legendSpecial_top25_Barcode", i, ".svg"), width = 4, height = 3)
 }
 
