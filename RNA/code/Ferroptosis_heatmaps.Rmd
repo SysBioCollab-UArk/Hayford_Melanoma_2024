@@ -21,7 +21,8 @@ library(ComplexHeatmap)
 
 
 ```{r}
-SAVEPLOTS <- FALSE
+SHOWPLOTS <- FALSE
+SAVEPLOTS <- TRUE
 ```
 
 
@@ -92,7 +93,7 @@ Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=log2(value), group = interaction(v
         legend.title = element_text(size=12,face="bold"),
         axis.title=element_text(size=12,face="bold"))
 
-Fer_ggploted
+if(SHOWPLOTS) Fer_ggploted
 
 if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_rawCounts_SKMEL5sublines+treatment.pdf") #, width = 20, height = 25)
 ```
@@ -129,7 +130,7 @@ Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=value, group = interaction(variabl
         legend.title = element_text(size=12,face="bold"),
         axis.title=element_text(size=12,face="bold"))
 
-Fer_ggploted
+if(SHOWPLOTS) Fer_ggploted
 
 if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_normCounts_SKMEL5sublines+treatment.pdf") #, width = 20, height = 25)
 ```
@@ -203,8 +204,8 @@ myplot <- ggplot(Ferr_fold_melt, aes(variable, Gene, fill = value)) +
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank())
 
-myplot
-# if(SAVEPLOTS) ggsave("Ferroptosis_FCHM_selected_wide.pdf") #, width = 8, height = 8)
+if(SHOWPLOTS) myplot
+if(SAVEPLOTS) ggsave("Ferroptosis_FCHM_selected_wide.pdf") #, width = 8, height = 8)
 ```
 
 ```{r fig.height=10, fig.width=8}
@@ -275,5 +276,5 @@ ht_list = Heatmap(as.matrix(fer$fold_exp), name = "Log2 fold expression",
     Heatmap(fer$annot1, name = "GO:1", col = annots_col, width = unit(5, "mm")) + 
     Heatmap(fer$annot2, name = "GO:2", col = annots_col, width = unit(5, "mm"))
 
-ht_list
+if(SHOWPLOTS) ht_list
 ```

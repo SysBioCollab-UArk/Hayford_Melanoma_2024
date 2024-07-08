@@ -12,8 +12,13 @@ library(ggpubr)
 library(transport)
 options(Seurat.object.assay.version = "v5")
 
-if (Sys.getenv("RSTUDIO") == "1") {
-  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# if (Sys.getenv("RSTUDIO") == "1") {
+#   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# }
+
+if (file.exists("combined_includingState.RData")) {
+  message("The file 'combined_includingState.RData' already exists. Stopping this script to prevent running it again.")
+  stop()
 }
 
 # Pull this from the data I shared on Box (data_large)
@@ -146,6 +151,7 @@ umap_label <- FetchData(combined,
 
 
 # Plot a UMAP plot for each metric
+f <- function() {
 map(metrics, function(qc){
   ggplot(qc_data,
          aes(umap_1, umap_2)) +
@@ -163,7 +169,8 @@ map(metrics, function(qc){
   plot_grid(plotlist = .)
 ggsave("UMAP_combined_SKMEL5_hg38_QCmetrics_qcCCReg.svg",
          width = 9, height = 6)
-
+}
+try(f()) # ADDING THIS TEMPORARILY SO THE SCRIPT WILL KEEP RUNNING EVEN WHEN IT ERRORS --LAH
 ########
 
 umap_vals <- as.data.frame(Embeddings(combined, reduction = "umap"))
@@ -358,7 +365,7 @@ I_noncycling_GO <- enrichGO(gene = rownames(subset(I_noncycling.markers, avg_log
                          pvalueCutoff  = 0.01,
                          qvalueCutoff  = 0.05)
 
-dotplot(I_noncycling_GO, showCategory=20)
+# dotplot(I_noncycling_GO, showCategory=20) # DON'T KNOW WHY THIS PLOT DOESN'T WORK. COMMENTING OUT FOR NOW --LAH
 
 # Idling vs Untreated
 I_markers <- FindMarkers(object = combined, ident.1 = c(0,2,5,6,7),

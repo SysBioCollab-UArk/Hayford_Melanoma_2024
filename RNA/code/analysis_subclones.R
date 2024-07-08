@@ -8,9 +8,9 @@ library(org.Hs.eg.db)
 library(clusterProfiler)
 
 # set working directory to RNA folder
-if (Sys.getenv("RSTUDIO") == "1") {
-  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-}
+# if (Sys.getenv("RSTUDIO") == "1") {
+#   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# }
 
 ## Get the data in the right format
 d <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=",")

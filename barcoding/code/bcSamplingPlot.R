@@ -1,9 +1,9 @@
 library(reshape2)
 library(ggplot2)
 
-if (Sys.getenv("RSTUDIO") == "1") {
-  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-}
+# if (Sys.getenv("RSTUDIO") == "1") {
+#   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# }
 
 bcDat <- read.csv('../data/bcPlot.csv')
 bcNum <- read.csv('../data/bcCount_allTechReps.csv')
@@ -295,7 +295,6 @@ bcNum_test_melt$Barcode <- factor(bcNum_test_melt$Barcode,
 
 # This is the same function as in the Rmisc package
 library(Rmisc)
-# source('~/Documents/QuarantaLab/SummarySE.R')
 
 bcNum_compare <- summarySE(bcNum_test_melt, measurevar = "value",
                            groupvars = c("Barcode", "Sample"))

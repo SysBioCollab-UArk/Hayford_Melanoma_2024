@@ -1,9 +1,9 @@
 library(tidyverse)
 library(ggpubr)
 
-if (Sys.getenv("RSTUDIO") == "1") {
-  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-}
+# if (Sys.getenv("RSTUDIO") == "1") {
+#   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# }
 
 # UT_lc_res <- read_tsv('/Volumes/Transcend/ATACseq/preseq_results/trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_aligned_sorted_lcExtrapResults.txt') %>%
 #   mutate(Library="Untreated")

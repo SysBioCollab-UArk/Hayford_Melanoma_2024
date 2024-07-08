@@ -15,9 +15,9 @@ library(TxDb.Hsapiens.UCSC.hg38.knownGene)
 library(svglite)
 txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
 
-if (Sys.getenv("RSTUDIO") == "1") {
-  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-}
+# if (Sys.getenv("RSTUDIO") == "1") {
+#   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# }
 
 ## RNAseq ##
 load(file="../data/untreatedIdling_DEA.RData")
@@ -222,4 +222,3 @@ ggscatter(Up_all_CC_complete_sorted,
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         legend.position = "none") 
 ggsave("RNA-ATACsub25_CC.svg", width = 7, height = 5)
-

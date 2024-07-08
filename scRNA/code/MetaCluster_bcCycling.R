@@ -2,10 +2,13 @@ library(dplyr)
 library(ggplot2)
 library(Seurat)
 
-if (Sys.getenv("RSTUDIO") == "1") {
-  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-}
+# if (Sys.getenv("RSTUDIO") == "1") {
+#   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# }
 
+if (!file.exists("combined_includingState.RData")){
+  source("Seurat_v5_SKMEL5_combined_hg38.R")
+}
 load("combined_includingState.RData")
 DimPlot(combined, reduction = "umap", group.by = "seurat_clusters")
 

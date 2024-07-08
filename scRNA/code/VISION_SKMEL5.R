@@ -5,10 +5,13 @@ library(stringr)
 library(ggplot2)
 library(ggpubr)
 
-if (Sys.getenv("RSTUDIO") == "1") {
-  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-}
+# if (Sys.getenv("RSTUDIO") == "1") {
+#   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# }
 
+if (!file.exists("combined_includingState.RData")){
+  source("Seurat_v5_SKMEL5_combined_hg38.R")
+}
 load("combined_includingState.RData")
 
 ## Run VISION Analysis

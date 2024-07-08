@@ -27,10 +27,7 @@ library(gplots)
 library(Rmisc)
 library(biomaRt)
 
-# This file found at https://github.com/RyanHope/Rmisc/blob/master/R/summarySE.R
-# source("summarySE.R")
-
-SAVEPLOT  <- FALSE
+SAVEPLOT  <- TRUE
 OVERWRITE <- FALSE
 ```
 
@@ -42,7 +39,7 @@ This only needs to be run once to generate the proper data matrix for further an
 
 ensembl <- useMart( biomart="ensembl",
                     dataset="hsapiens_gene_ensembl",
-                    host="https://useast.ensembl.org")
+                    host="https://uswest.ensembl.org")
 mart <- useDataset("hsapiens_gene_ensembl", mart= ensembl, verbose= FALSE)
 
 d <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=',')
@@ -320,6 +317,7 @@ http://purl.obolibrary.org/obo/GO_0006874
 GO:0051480
 
 ```{r}
+# We should put a try/catch block here in case the useast host is down
 ensembl <- useMart( biomart="ensembl",
                     dataset="hsapiens_gene_ensembl",
                     host="https://useast.ensembl.org")
@@ -385,7 +383,7 @@ b <- b[order(apply(b, 1, function(x) max(x)), decreasing = TRUE), ]
 
 ```{r fig.height=4, fig.width=3}
 if(SAVEPLOT) 
-    pdf(file="~/Desktop/ca-genes_fold-change_heatmap.pdf") #, height=6, width=4)
+    pdf(file="ca-genes_fold-change_heatmap.pdf") #, height=6, width=4)
 heatmap.2(as.matrix(b), Rowv=FALSE, Colv=FALSE, dendrogram="none",
           scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
           col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
@@ -406,7 +404,7 @@ heatmap.2(as.matrix(b), Rowv=FALSE, Colv=FALSE, dendrogram="none",
 Remove 0 time point columns and replot; also adjusted first argument in `mar` in `key.par` to be 6 (spacing above plot to bottom of color key). 
 ```{r fig.height=6, fig.width=4}
 if(SAVEPLOT) 
-    pdf(file="~/Desktop/ca-genes_fold-change_heatmap.pdf") #, height=6, width=4)
+    pdf(file="ca-genes_fold-change_heatmap.pdf") #, height=6, width=4)
 heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]), Rowv=FALSE, Colv=FALSE, dendrogram="none",
           scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
           col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
@@ -507,7 +505,7 @@ z <- refmtData(genes=mygenes)
 
 ```{r}
 if(SAVEPLOT) 
-    pdf(file="~/Desktop/mygenes_fold-change_heatmap.pdf", height=3, width=5)
+    pdf(file="mygenes_fold-change_heatmap.pdf", height=3, width=5)
 
 heatmap.2(as.matrix(z), Rowv=FALSE, Colv=FALSE, dendrogram="none",
           scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
@@ -530,7 +528,7 @@ Drop 0 time point columns and replot
 z <- z[,!grepl("_0",colnames(z))]
 
 if(SAVEPLOT) 
-    pdf(file="~/Desktop/mygenes_fold-change_heatmap.pdf", height=3, width=5)
+    pdf(file="mygenes_fold-change_heatmap.pdf", height=3, width=5)
 
 heatmap.2(as.matrix(z), Rowv=FALSE, Colv=FALSE, dendrogram="none",
           scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",

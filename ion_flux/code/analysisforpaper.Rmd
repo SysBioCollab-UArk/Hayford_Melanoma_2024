@@ -42,7 +42,7 @@ d <- addMapInfo(dat_melt, file.path("..", "platemaps", "platemap_20210211.tsv"))
 ```{r}
 avgd <- d %>%
   group_by(Time, cell.line, drug1, drug2) %>%
-  summarise(mean = mean(Intensity), se = sd(Intensity)/sqrt(8), n = n())
+  dplyr::summarise(mean = mean(Intensity), se = sd(Intensity)/sqrt(8), n = n())
 
 avgd <- avgd[avgd$cell.line == "SKMEL5" & avgd$drug2 == "CPA-Ca2+",]
 avgd$selow <- avgd$mean - avgd$se
