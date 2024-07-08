@@ -1,5 +1,6 @@
 library(Rsamtools)
 library(BSgenome.Hsapiens.UCSC.hg38)
+library(ggrepel)
 library(ChIPseeker)
 library(soGGi)
 library(MotifDb)
