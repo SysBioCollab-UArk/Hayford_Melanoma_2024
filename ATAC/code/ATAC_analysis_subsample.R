@@ -45,6 +45,7 @@ qcRes_I <- ChIPQCsample("../data/bam/idling_subsample_25p_dedup_unique_fullClean
 
 ### Peak Annotation
 MacsCalls_UT <- granges(qcRes_UT)
+`%over%` <- IRanges::`%over%` # Added this to avoid a conflict with %over% defined in another package --LAH
 data.frame(Blacklisted=sum(MacsCalls_UT %over% blkList),
            Not_Blacklisted=sum(!MacsCalls_UT %over% blkList))
 MacsCalls_UT <- MacsCalls_UT[!MacsCalls_UT %over% blkList]
