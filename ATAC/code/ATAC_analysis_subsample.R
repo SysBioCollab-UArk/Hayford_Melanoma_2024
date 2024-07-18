@@ -112,6 +112,8 @@ shared_peaks <- c("Untreated" = vd_counts$freq[2],
 venn_sharedPeaks <- euler(shared_peaks)
 plot(venn_sharedPeaks, fills = c("red", "blue"),
      shape = "ellipse", quantities = TRUE)
+dev.copy(png, "venn_sharedPeaks.png")
+dev.off()
 
 upset(fromExpression(shared_peaks), order.by = "freq",
       sets.bar.color = c("blue", "red"), 
