@@ -197,11 +197,14 @@ state_bc_I_sub <- state_bc_I[,c("BCnum", "freq")]
 compareBCs_top25 <- merge(bcFC, state_bc_I_sub, by = "BCnum")
 names(compareBCs_top25) <- c("BCnum", "lineage", "FC", "prop_I")
 
-ggscatter(compareBCs_top25, x="prop_I",y="FC", add="reg.line", size=1) +
-  stat_cor(method="pearson", aes(label = ..r.label..), size = 5) +
+########### FIGURE 2E ###########
+ggscatter(subset(compareBCs_top25, as.numeric(BCnum) < 25), # remove BC #25
+          x="prop_I", y="FC", add="reg.line", size=1) +
+  stat_cor(method="pearson", aes(label = after_stat(r.label)), size = 5) +
   ggrepel::geom_label_repel(aes(label=BCnum)) +
   scale_x_continuous(labels = scales::percent) +
-  labs(x="Percentage of Fast-Diving Idling DTPs", 
+  labs(x="% of Fast-Dividing Idling Cells", 
        y=expression(Log[2]~"Barcode Fold Change")) +
-  theme(axis.text = element_text(size = 14)) 
+  theme(axis.text = element_text(size = 14), axis.title=element_text(size=14)) 
 ggsave("Idling_bcFC_correlation.pdf", width = 6, height = 4)
+#################################

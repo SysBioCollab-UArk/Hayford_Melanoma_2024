@@ -27,6 +27,8 @@ figure_names <- hash()
 # ATAC/code
 # ...
 # barcoding/code
+figure_names['SKMEL5_barcode_propRankAbundance_comparison.pdf'] <- 'Fig_2A.pdf'
+figure_names['SKMEL5_barcode_FCdensity_bcOverlay.pdf'] <- 'Fig_2B.pdf'
 # ...
 # dose_response/code
 # ...
@@ -35,11 +37,16 @@ figure_names <- hash()
 # ion_flux/code
 # ...
 # RNA/code
+figure_names['SKMEL5_sublines_timeSeriesRNA_rld_Fig.pdf'] <- 'Fig_1B.pdf'
 # ...
 # scRNA/code
-figure_names['UMAP_combined_SKMEL5_hg38_qcCCReg.svg'] <- 'Fig_1A.svg'
+figure_names['UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentPoint.svg'] <- 'Fig_1A.svg'
+figure_names['subsetHallmarks_acrossSKMEL5clusters.svg'] <- 'Fig_1C.svg'
+figure_names['UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentDensity_CCStatePoint.svg'] <- 'Fig_1D.svg'
 figure_names['SKMEL5_allClusters_CellCycleState_proportion.pdf'] <- 'Fig_1E.pdf'
-# ...
+figure_names['UMAP_combined_lineageID_tinted_BCs_2_5_13_9.svg'] <- 'Fig_2C.svg'
+figure_names['SKMEL5_I_CellCycleState_onlyDividing_proportionWAverage.pdf'] <- 'Fig_2D.pdf'
+figure_names['Idling_bcFC_correlation.pdf'] <- 'Fig_2E.pdf'
 
 # Set working directory to directory where this script is
 if (Sys.getenv("RSTUDIO") == "1") {
@@ -79,6 +86,8 @@ otherpkgs <- c("glmGamPoi", "presto")
 directories <- c("barcoding/code", "dose_response/code",
                  "GO_correlations/code", "ion_flux/code", "RNA/code",
                  "scRNA/code", "ATAC/code")
+
+# directories <- c("scRNA/code", "ATAC/code")
 
 # Uninstall all required packages if starting from scratch
 if (START_FROM_SCRATCH == TRUE)
@@ -149,8 +158,8 @@ for (dir in directories){
       file.rename(file.path("_HAYFORD_2024_PAPER_PLOTS", old_name),
                   file.path("_HAYFORD_2024_PAPER_PLOTS", new_name))
       # Tell the user about it
-      message(paste("Copying", old_name, 
-                    "to '_HAYFORD_2024_PAPER_PLOTS' and renaming it", new_name))
+      message(paste("Copied", old_name, 
+                    "to '_HAYFORD_2024_PAPER_PLOTS' and renamed it", new_name))
     }
   }
 }

@@ -93,36 +93,44 @@ pca_DEseq_df <- data.frame(PC1 = pca_DEseq$x[,1],
                            replicate = rep(c("Rep1", "Rep2", "Rep3"), times=9))
 
 library(plyr)
-pca_DEseq_means <- ddply(pca_DEseq_df, .(cell.line, day), summarise, meanPC1 = mean(PC1), meanPC2 = mean(PC2))
+pca_DEseq_means <- ddply(pca_DEseq_df, .(cell.line, day), summarise, 
+                         meanPC1 = mean(PC1), meanPC2 = mean(PC2))
 
-plt_pca <- ggplot(pca_DEseq_df, aes(PC1,PC2, color = cell.line))+
+########### FIGURE 1B ###########
+plt_pca <- ggplot(pca_DEseq_df, aes(PC1, PC2, color = cell.line)) +
   geom_point(aes(shape = day), size=2) +
   geom_path(data = pca_DEseq_means, 
             aes(x=meanPC1, y=meanPC2,
                 color=cell.line), arrow = arrow(),
             size = 0.8) +
-  labs(x=paste0("PC1 (",pca_DEseq_perc[1],"% variance)"), y=paste0("PC2 (",pca_DEseq_perc[2],"% variance)")) +
+  labs(x=paste0("PC1 (",pca_DEseq_perc[1],"% variance)"), 
+       y=paste0("PC2 (",pca_DEseq_perc[2],"% variance)"), 
+       shape="Days Post Treatment", color="Subline") +
   theme_bw() + scale_color_manual(values = c("orange", "cyan", "purple")) +
+  scale_shape_discrete(labels = c("Day 0", "Day 3", "Day 8")) + 
   # ggtitle("PCA - Subclones in Time") +
-  theme(legend.text = element_text(size = 12), 
+  theme(legend.text = element_text(size = 8), 
         plot.title = element_text(size = 12, 
                                   hjust = 0.5), 
         axis.text=element_text(size=12),
-        legend.title = element_text(size=12),
-        legend.position = "right",
+        legend.title = element_text(size=8),
+        legend.position = c(0.45, 0.45),
+        legend.key.size = unit(1, 'lines'),
+        legend.spacing.y = unit(-0.1, "lines"),
         axis.title=element_text(size=12),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank())
 
-library(svglite)
-plt_pca 
+# library(svglite)
+plt_pca
 # ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Fig.svg") #, width = 4, height = 3)
-ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Fig.pdf") #, width = 4, height = 3)
+ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Fig.pdf", width = 4, height = 3)
+#################################
 
-plt_pca_leg <- get_legend(plt_pca)
-as_ggplot(plt_pca_leg) 
+# plt_pca_leg <- get_legend(plt_pca)
+# as_ggplot(plt_pca_leg) 
 # ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Figleg.svg")
-ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Figleg.pdf")
+# ggsave("SKMEL5_sublines_timeSeriesRNA_rld_Figleg.pdf")
 
 
 ## Differential Expression Analysis
@@ -239,4 +247,3 @@ dotplot(ego_genesDown, font.size = 14, label_format = 40) +
         axis.text=element_text(size=12),
         legend.title = element_text(size=12,face="bold"), 
         axis.title=element_text(size=12, face="bold"))
-

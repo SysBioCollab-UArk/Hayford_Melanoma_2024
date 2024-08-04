@@ -655,6 +655,9 @@ t2$BCnum <- as.integer(factor(t2$lineageColored, levels = unique(bcNum_prop_comp
 BCnum <- subset(t2, select = c("BCnum"))
 combined <- AddMetaData(combined, BCnum, col.name = "BCnum")
 
+########### FIGURE 2C ###########
+fig_4BCs_idxs <- c(2, 5, 13, 9)
+fig_4BCs_plots <- list()
 for (i in seq(25)){
   # print(i)
   tint1 <- data.frame(ifelse(combined@meta.data$BCnum == i, 1, 0.1),
@@ -663,15 +666,16 @@ for (i in seq(25)){
   combined <- AddMetaData(combined, tint1, 'Tint1')
   test_subset1 <- FetchData(combined, vars = c("umap_1", "umap_2", "lineage", "S.Score", "G2M.Score",
                                               "Phase", "old.ident", "lineageColored", "Tint", "Tint1"))
-  ggplot() +
+  g <- ggplot() +
     theme_bw() +
     geom_density_2d(data = test_subset1, aes(x = umap_1, y = umap_2, 
                                              color = old.ident), alpha = 0.4) +
-    scale_color_manual(values = c("blue", "red")) +
+    scale_color_manual(values = c("red", "blue")) +
     geom_point(data = subset(test_subset1, BCnum == i), shape = 21,
                aes(x = umap_1, y = umap_2, fill = lineageColored),
                size = 0.8, stroke = 0.1) + 
     scale_fill_manual(values = cols, labels = labels) +
+    labs(x = "UMAP 1", y = "UMAP 2") +
     # scale_alpha_continuous(range = c(0.1,1)) +
     # scale_color_manual(values = cols, labels = labels, name = "Barcode") +
     # guides(alpha = "none") +
@@ -679,14 +683,38 @@ for (i in seq(25)){
           axis.text.x = element_text(size = 12, colour = "black"),
           axis.text.y = element_text(size = 12, colour = "black"),
           legend.position = "none", legend.text = element_text(size = 12),
-          plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
-          legend.title = element_text(size=12), axis.title=element_text(size=12)) +
-    ggtitle(paste("Barcode",i)) 
-    if (!dir.exists("UMAP_top25BCs_byNum")){
-      dir.create("UMAP_top25BCs_byNum")
+          plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), 
+          axis.text=element_text(size=14),
+          legend.title = element_text(size=12), axis.title=element_text(size=12),
+          plot.background = element_rect(fill = "transparent", color = NA)) +
+    ggtitle(paste("Barcode",i))
+  
+  # Save plots for barcodes 2, 5, 9 and 13
+  if (i %in% fig_4BCs_idxs){
+    if (i == 2 || i == 5){
+      g <- g + labs(x = "") + scale_x_continuous(labels=rep("", 5))
     }
-    ggsave(paste0("UMAP_top25BCs_byNum/umap_combined_lineageID_tinted_legendSpecial_top25_Barcode", i, ".svg"), width = 4, height = 3)
+    if (i == 5 || i == 9){
+      g <- g + labs(y = "") + scale_y_continuous(labels=rep(str_pad("", 4, "left"), 6))
+    }
+    if (i == 2){ g <- g + theme(plot.margin=unit(c(0,-0.35,-0.35,0), "cm")) }
+    else if (i == 5){ g <- g + theme(plot.margin=unit(c(0,0,-0.35,-0.15), "cm")) }
+    else if (i == 9){ g <- g + theme(plot.margin=unit(c(-0.35,0,0,-0.15), "cm")) }
+    else if (i == 13){ g <- g + theme(plot.margin=unit(c(-0.35,-0.35,0,0), "cm")) }
+    fig_4BCs_plots[[length(fig_4BCs_plots)+1]] <- g 
+  }
+  
+  if (!dir.exists("UMAP_top25BCs_byNum")){
+    dir.create("UMAP_top25BCs_byNum")
+  }
+  ggsave(paste0("UMAP_top25BCs_byNum/umap_combined_lineageID_tinted_legendSpecial_top25_Barcode", i, ".svg"), width = 4, height = 3)
 }
+
+fig_4BCs <- ggarrange(fig_4BCs_plots[[1]], fig_4BCs_plots[[2]], 
+                      fig_4BCs_plots[[4]], fig_4BCs_plots[[3]], ncol=2, nrow=2)
+fig_4BCs
+ggsave("UMAP_combined_lineageID_tinted_BCs_2_5_13_9.svg", width=6, height=4)
+#################################
 
 ####
 
@@ -856,11 +884,13 @@ ggplot(subset(state_byBC, State == "Fast_Dividing" & Condition == "Untreated"), 
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ggsave("SKMEL5_UT_CellCycleState_onlyDividing_proportionWAverage.pdf", width = 6, height = 4)
 
-ggplot(subset(state_byBC, State == "Fast_Dividing" & Condition == "Idling"), aes(x = as.factor(BCnum), y = freq)) +
+########### FIGURE 2D ###########
+ggplot(subset(state_byBC, State == "Fast_Dividing" & Condition == "Idling" & BCnum < 25), 
+       aes(x = as.factor(BCnum), y = freq)) +
   theme_bw() + geom_bar(stat = "identity", position = "dodge", color = "black", fill = "blue") +
   geom_hline(yintercept = 0.166, linetype = 2) +
   scale_y_continuous(labels = scales::percent) +
-  labs(x = "Barcode", y = "Percentage of Fast Dividing Cells") +
+  labs(x = "Barcode", y = "% of Fast-Dividing Idling Cells") +
   theme(axis.text.y = element_text(size = 14),
         legend.position = "right", legend.text = element_text(size = 14),
         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), 
@@ -869,7 +899,7 @@ ggplot(subset(state_byBC, State == "Fast_Dividing" & Condition == "Idling"), aes
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 ggsave("SKMEL5_I_CellCycleState_onlyDividing_proportionWAverage.pdf", width = 6, height = 4)
-
+#################################
 
 # ggplot(state_all_table_byBC_melt, aes(x = Condition, y = value,
 #                                  group = State, fill = State)) +
@@ -899,42 +929,57 @@ ggplot(test_KM, aes(x=umap_1, y=umap_2, color = Kclusters)) +
 # combined <- AddMetaData(combined, Kclusters, col.name = "Kclusters")
 # DimPlot(combined, reduction = "pca", group.by = "Kclusters")
 
-
+########### FIGURE 1A ###########
 plt_treat <- ggplot(test_twoState, aes(x = umap_1, y = umap_2)) +
-  geom_point(aes(color = factor(old.ident, levels = c("Untreated", "Idling"))), size = 1) + 
+  geom_point(aes(color = factor(old.ident, levels = c("Untreated", "Idling"))), 
+             size = 1) + 
   scale_color_manual(name = "", values = c("red", "blue")) +
-  theme_bw() + xlim(-11.5, 11.5) + ylim(-11.5, 11.5) +
+  theme_bw() + #xlim(-11.5, 11.5) + ylim(-11.5, 11.5) +
+  labs(x = "UMAP 1", y = "UMAP 2") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         axis.text.x = element_text(size = 12, colour = "black"),
         axis.text.y = element_text(size = 12, colour = "black"),
-        legend.position = "right", legend.text = element_text(size = 12),
-        plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
+        legend.position = c(0.22, 0.2), legend.text = element_text(size = 12),
+        plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=14),
         legend.title = element_text(size=12), axis.title=element_text(size=12)) 
-plt_treat 
-ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentPoint.svg", width = 4, height = 3)
-plt_treat_leg <- ggpubr::get_legend(plt_treat)
-as_ggplot(plt_treat_leg) 
-ggsave("UMAP_treatment_legend.svg", width = 2.5, height = 4)
+# plt_treat 
+ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentPoint.svg", width=4, 
+       height=3)
+#################################
+# plt_treat_leg <- ggpubr::get_legend(plt_treat)
+# as_ggplot(plt_treat_leg) 
+# ggsave("UMAP_treatment_legend.svg", width = 2.5, height = 4)
 
+########### FIGURE 1D ###########
 plt_state <- ggplot(test_twoState, aes(x = umap_1, y = umap_2)) +
   geom_density_2d(aes(color = factor(old.ident, levels = c("Untreated", "Idling"))), alpha = 0.4) +
-  scale_color_manual(name = "", values = c("red", "blue")) +
+  scale_color_manual(name = NULL, values = c("red", "blue")) +
   geom_point(shape = 21,
              aes(fill = State),
              size = 1, stroke = 0.1) + 
-  scale_fill_manual(name = "", values = c("green3", "gold")) +
-  theme_bw() + xlim(-11.5, 11.5) + ylim(-11.5, 11.5) +
+  scale_fill_manual(name = NULL, labels = c("Fast Dividing", "Slow Dividing"), 
+                    values = c("green3", "gold")) +
+  guides(color = guide_legend(order = 2),
+         fill  = guide_legend(order = 1)) +
+  theme_bw() + # xlim(-11.5, 11.5) + ylim(-11.5, 11.5) +
+  labs(x = "UMAP 1", y = "UMAP 2") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         axis.text.x = element_text(size = 12, colour = "black"),
         axis.text.y = element_text(size = 12, colour = "black"),
-        legend.position = "right", legend.text = element_text(size = 12),
-        plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
+        legend.position = c(0.24, 0.26), legend.text = element_text(size = 12),
+        #legend.spacing.y = unit(-0.1, "lines"), 
+        legend.margin = margin(0, 0, 0, 0),
+        plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=14),
         legend.title = element_text(size=12), axis.title=element_text(size=12)) 
 plt_state 
-ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentDensity_CCStatePoint.svg", width = 4, height = 3)
-plt_state_leg <- ggpubr::get_legend(plt_state)
-as_ggplot(plt_state_leg) 
-ggsave("UMAP_state_legend.svg", width = 2.5, height = 4)
+ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentDensity_CCStatePoint.svg", 
+       width = 4, height = 3)
+#################################
+# plt_state_leg <- ggpubr::get_legend(plt_state)
+# as_ggplot(plt_state_leg) 
+# ggsave("UMAP_state_legend.svg", width = 2.5, height = 4)
 
 
 
@@ -987,28 +1032,26 @@ region_all_n <- data.frame(name = unique(region_all_table_n$name),
                                      paste("n =", as.character(region_all_table_n$num[3])),
                                      paste("n =", as.character(region_all_table_n$num[4]))))
 
-ggplot(region_all_table, aes(x = name, y = freq,
-                             group = State, fill = State)) +
-  theme_classic() + geom_bar(stat = "identity", color = "black") +
-  scale_fill_manual(values = c("green3", "gold")) +
+########### FIGURE 1E ###########
+ggplot(region_all_table, aes(x = name, y = freq, group = State, fill = State)) +
+  theme_classic() + 
+  geom_bar(stat = "identity", color = "black") +
+  scale_fill_manual(labels = c("Fast Dividing", "Slow Dividing"), 
+                    values = c("green3", "gold")) +
   scale_y_continuous(name = "Percentage of Cells", labels = scales::percent) +
   scale_x_discrete(name = "Condition",
-                   labels = c(expression(Untreated[large]),
-                              expression(Untreated[small]),
-                              expression(Idling[large]),
-                              expression(Idling[small]))) +
-  # labs(y = "Percentage of Cells") +
-  # ggtitle("Cluster Cell Cycle State") +
-  # geom_text(data = region_all_n,
-  #           aes(name, label, label = label)) +
+                   labels = c('UTL', 'UTS', 'IL', 'IS')) +
   theme(axis.text.y = element_text(size = 14),
-        legend.position = "bottom", legend.text = element_text(size = 14),
+        legend.position = "top", legend.text = element_text(size = 12),
+        legend.box.spacing = margin(-2), 
         plot.title = element_text(size = 16, hjust = 0.5),
         axis.text=element_text(size=14),
         legend.title = element_blank(), axis.title=element_text(size=14),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  geom_text(data = region_all_n, aes(name, 1.05, label=label, group=NULL, fill=NULL),
+            size=5)
 ggsave("SKMEL5_allClusters_CellCycleState_proportion.pdf", width = 6, height = 5)
-
+#################################
 
 ####
 

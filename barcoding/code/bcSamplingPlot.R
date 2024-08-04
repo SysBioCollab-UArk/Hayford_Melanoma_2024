@@ -352,12 +352,13 @@ bcNum_prop_compare <- Rmisc::summarySE(bcNum_prop_test_melt, measurevar = "value
 bcNum_prop_compare$Sample <- factor(bcNum_prop_compare$Sample,
                                     levels = c('Untreated', 'Idling'))
 
+########### FIGURE 2A ###########
 bcNum_prop_compare_sub <- bcNum_prop_compare[c(1:48),]
-ggplot(bcNum_prop_compare_sub, aes(x=Barcode, y=value, group = Sample,
+bc_abundance <- ggplot(bcNum_prop_compare_sub, aes(x=Barcode, y=value, group = Sample,
                               fill = Sample)) +
   geom_bar(stat = "identity", position = "dodge", color = "black", linewidth = 0.2) +
-  geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
-                position=position_dodge(.9)) +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=0.2,
+                position=position_dodge(0.9)) +
   # geom_ribbon(data = bcNum_model_prop_compare_sub,
   #             aes(x = Barcode, y = value, ymin=value-sd, ymax=value+sd),
   #             alpha=0.1, color = "blue", fill = "blue") +
@@ -369,11 +370,18 @@ ggplot(bcNum_prop_compare_sub, aes(x=Barcode, y=value, group = Sample,
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     axis.text.x = element_text(size = 14, colour = "black", angle = 90, vjust = 0.5, hjust = 1),
     axis.text.y = element_text(size = 14, colour = "black"),
-    legend.position = "none", legend.text = element_text(size = 14),
+    legend.position = c(0.8, 0.5), legend.text = element_text(size = 14),
     plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
-    legend.title = element_text(size=14), axis.title=element_text(size=14))
+    legend.title = element_blank(), axis.title=element_text(size=14)) +
+  annotate("text", x=2, y=0.108, label="\u25cf") +
+  annotate("text", x=5, y=0.047, label=c("\u002a"), size=6, fontface = "bold") +
+  annotate("text", x=9, y=0.029, label=c("\u002a"), size=6, fontface = "bold") +
+  annotate("text", x=13, y=0.039, label=c("\u25cf"))
 
-ggsave("SKMEL5_barcode_propRankAbundance_comparison.pdf") #, width = 6, height = 4)
+bc_abundance
+ggsave("SKMEL5_barcode_propRankAbundance_comparison.pdf", device = cairo_pdf, 
+       width = 6, height = 4)
+#################################
 
 ### Fold Change Plot
 bcFC <- merge(x = bcNum_prop_UT_testMeans, y = bcNum_prop_I_testMeans,
@@ -410,8 +418,9 @@ n <- dim(test_hist1)[1]
 # bw <- 3.49 * sd(test_hist1[, "x"]) * dim(test_hist1)[1]^(-1/3)
 bw = 1
 
+########### FIGURE 2B ###########
 plt_hist_BCoverlay <- ggplot(test_hist1, aes(x=x)) + theme_bw() +
-  geom_histogram(aes(y= (after_stat(count))/(n*bw), fill = BCnum),
+  geom_histogram(aes(y = (after_stat(count))/(n*bw), fill = BCnum),
                  binwidth = 1, color = "black", linewidth = 0.1) +
   scale_fill_manual(values = rainbow(24)) +
   labs(fill = "Barcode") +
@@ -421,13 +430,16 @@ plt_hist_BCoverlay <- ggplot(test_hist1, aes(x=x)) + theme_bw() +
   xlim(-3.5,3.5) +
   theme(
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-    axis.text = element_text(size = 12),
-    legend.position = "right", legend.text = element_text(size = 12),
+    axis.text = element_text(size = 16), axis.text.y = element_blank(), 
+    axis.ticks.y = element_blank(),
+    legend.position = c(0.85, 0.6), legend.text = element_text(size = 12),
     plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
-    legend.title = element_text(size=12), axis.title=element_text(size=12))
+    legend.title = element_text(size=12), axis.title=element_text(size=16),
+    legend.key.size = unit(12, "pt"))
 
-plt_hist_BCoverlay 
+plt_hist_BCoverlay
 ggsave("SKMEL5_barcode_FCdensity_bcOverlay.pdf") #, width = 3.5, height = 3)
-plt_hist_BCoverlay_leg <- ggpubr::get_legend(plt_hist_BCoverlay)
-ggpubr::as_ggplot(plt_hist_BCoverlay_leg)
-ggsave("SKMEL5_barcode_FCdensity_bcOverlay_leg.pdf")
+#################################
+# plt_hist_BCoverlay_leg <- ggpubr::get_legend(plt_hist_BCoverlay)
+# ggpubr::as_ggplot(plt_hist_BCoverlay_leg)
+# ggsave("SKMEL5_barcode_FCdensity_bcOverlay_leg.pdf")
