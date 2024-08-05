@@ -227,16 +227,20 @@ ego_genesDown <- clusterProfiler::enrichGO(gene  = genes_down_ENTREZID,
                                            qvalueCutoff  = 0.05, 
                                            readable      = TRUE)
 
-## This creates FIG 3A
+########### FIGURE 3A ###########
+library(scales)
 dotplot(ego_genesUp_MF, font.size = 14, label_format = 40) + 
   # ggtitle("GO Over-representation Upregulated Genes for RNA-seq") +
   labs(x="Gene Ratio") +
   theme(legend.text = element_text(size = 12),
         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
-        axis.text=element_text(size=12),
+        axis.text=element_text(size=6),
         legend.title = element_text(size=12,face="bold"), 
-        axis.title=element_text(size=12, face="bold"))
-ggsave("GOenrichment_genesUp_MF.pdf")
+        legend.position = c(0.8, 0.32), legend.box = 'vertical',
+        axis.title=element_text(size=12, face="bold")) +
+  scale_y_discrete(labels = label_wrap(35))
+ggsave("GOenrichment_genesUp_MF.pdf", width=6, height=6)
+#################################
 
 # this is not FIG 3A because it calculated BP-type GO, not MF to compare w/ ATAC
 dotplot(ego_genesDown, font.size = 14, label_format = 40) + 

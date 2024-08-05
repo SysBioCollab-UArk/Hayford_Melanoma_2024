@@ -53,7 +53,7 @@ ggplot() +
   geom_line(aes(x=Time, y=mean, color=drug1)) +
   geom_ribbon(aes(x=Time, ymin=selow, ymax=sehigh, group=drug1, fill=drug1), 
               alpha=0.2) +
-  theme(legend.position = c(0.2,0.8), legend.text = element_text(size = 12),
+  theme(legend.position.inside = c(0.2,0.8), legend.text = element_text(size = 12),
         axis.title.x = element_text(size=12), 
         axis.title.y = element_text(size=12), 
         axis.text.x = element_text(size=12), 
@@ -93,7 +93,7 @@ ggplot() +
   geom_line(aes(x=Time, y=norm_mean, color=drug1)) +
   geom_ribbon(aes(x=Time, ymin=normselow, ymax=normsehigh, group=drug1, fill=drug1), 
               alpha=0.2) +
-  theme(legend.position = c(0.2,0.8), legend.text = element_text(size = 12),
+  theme(legend.position.inside = c(0.2,0.8), legend.text = element_text(size = 12),
         axis.title.x = element_text(size=12), 
         axis.title.y = element_text(size=12), 
         axis.text.x = element_text(size=12), 
@@ -108,11 +108,14 @@ ggplot() +
 
 ### Remove early and late data points
 ```{r}
+########### FIGURE 3E ###########
 avgd2[avgd2$Time > 20 & avgd2$Time < 550,] %>%
 ggplot() +
-  geom_rect(aes(xmin = 280, xmax = Inf, ymin = -Inf, ymax = 1.15),
-                   fill = "oldlace", color="black", size=0, alpha = 0.05) +
-  geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 1.15),
+  geom_rect(data = data.frame(x = c(0)), 
+            aes(xmin = 280, xmax = Inf, ymin = -Inf, ymax = 1.15),
+                   fill = "orange", color="black", size=0, alpha = 0.05) +
+  geom_rect(data = data.frame(x = c(0)), 
+            aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 1.15),
                    fill = NA, color="black", size=0.5, alpha = 0.05) +
   geom_line(aes(x=Time, y=norm_mean, color=drug1), size=1.5) +
   geom_ribbon(aes(x=Time, ymin=normselow, ymax=normsehigh, group=drug1, fill=drug1), 
@@ -125,7 +128,7 @@ ggplot() +
         axis.text.y = element_text(size=20),
         panel.background = element_rect(fill = "white", color = NA, 
                                         linetype = "solid"),
-        plot.margin=unit(c(1,0,0,0), "cm"),) +
+        plot.margin=unit(c(1,0.1,0,0), "cm"),) +
   guides(color = guide_legend(byrow = TRUE)) +
   labs(x = "Time (s)", y = "Normalized Fluorescence") +
   scale_color_manual(name=NULL, values = c("red", "blue"), 
@@ -139,5 +142,6 @@ ggplot() +
                label.size = 7, vjust = -0.2, size = 0.6) + 
   geom_bracket(xmin = 280, xmax = 550, y.position = 1.21, label = '"+Ca"^"2+"', 
                type = "expression", label.size = 7, vjust = -0.2, size = 0.6)
-ggsave("SOCE_untreated_idling_300_dpi.png", dpi=300)
+ggsave("SOCE_untreated_idling.pdf", width = 8, height = 5)
+#################################
 ```

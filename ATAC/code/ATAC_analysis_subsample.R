@@ -173,8 +173,21 @@ go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.H
 # dotplot(go_con_BP) + ggsave("GOenrichment_sub25_con_BP.pdf", width = 8, height = 5)
 # 
 # dotplot(go_UT_MF) + ggsave("GOenrichment_sub25_UT_MF.pdf", width = 8, height = 5)
-dotplot(go_I_MF, font.size = 14, label_format = 40)
-ggsave("GOenrichment_sub25_I_MF.pdf") #, width = 8, height = 5)
+
+########### FIGURE 3C ###########
+library(scales)
+dotplot(go_I_MF, font.size = 14, label_format = 40)+ 
+  labs(x="Gene Ratio") +
+  theme(legend.text = element_text(size = 12),
+        plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=6),
+        legend.title = element_text(size=12,face="bold"), 
+        legend.position = c(0.8, 0.32), legend.box = 'vertical',
+        axis.title=element_text(size=12, face="bold")) +
+  scale_y_discrete(labels = label_wrap(35))
+ggsave("GOenrichment_sub25_I_MF.pdf", width = 6, height = 6)
+#################################
+
 # ggsave("GOenrichment_sub25_I_MF.svg") #, width = 8, height = 5)
 # dotplot(go_con_MF) + ggsave("GOenrichment_sub25_con_MF.pdf", width = 8, height = 5)
 # 

@@ -39,7 +39,7 @@ This only needs to be run once to generate the proper data matrix for further an
 
 ensembl <- useMart( biomart="ensembl",
                     dataset="hsapiens_gene_ensembl",
-                    host="https://uswest.ensembl.org")
+                    host="https://useast.ensembl.org")
 mart <- useDataset("hsapiens_gene_ensembl", mart= ensembl, verbose= FALSE)
 
 d <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=',')
@@ -405,7 +405,8 @@ Remove 0 time point columns and replot; also adjusted first argument in `mar` in
 ```{r fig.height=6, fig.width=4}
 if(SAVEPLOT) 
     pdf(file="ca-genes_fold-change_heatmap.pdf") #, height=6, width=4)
-heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]), Rowv=FALSE, Colv=FALSE, dendrogram="none",
+hm2 <- heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]),
+          Rowv=FALSE, Colv=FALSE, dendrogram="none",
           scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
           col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
           density.info = "none",
@@ -420,6 +421,34 @@ heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]), Rowv=FALSE, Colv=FALSE, dendr
                                as.character(signif(breaks[length(breaks)],2)))
                  ))}
           )
+```
+
+```{r}
+########### FIGURE 3B ###########
+library(ComplexHeatmap)
+library(circlize)
+pdf(file="ca-genes_fold-change_ComplexHeatmap.pdf", height=14)
+x <- as.matrix(b[,!grepl("_0",colnames(b))])
+ceil_x <- ceiling(max(abs(x)))
+col_fun = colorRamp2(seq(-ceil_x, ceil_x, ceil_x / 10), bluered(21))
+panel_fun = function(index, nm) {
+    grid.rect(height = unit(1.5, "npc"), just = c('center', 'bottom'),
+              gp = gpar(lwd = 0))
+    grid.text(nm, 0.5, 0.75, just = c('center', 'bottom'), 
+              gp = gpar(fontsize = 20, fontface = 'bold'))
+}
+column_ha <- HeatmapAnnotation(
+  subclones = anno_block(align_to = list("SC01" = 1:2, "SC07" = 3:4, "SC10" = 5:6)),
+  days = anno_text(c("3d", "8d", "3d", "8d", "3d", "8d"), rot = 0, gp = gpar(fontsize = 20)))
+hm <- Heatmap(x, name="Log2 Fold Change", col = col_fun, row_names_gp = gpar(fontsize = 14), 
+        show_column_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, 
+        heatmap_height = unit(12.5, "in"), top_annotation = column_ha,
+        heatmap_legend_param = list(direction = "horizontal", title_position = "topcenter",
+                                    legend_width = unit(5, "cm"), 
+                                    labels_gp = gpar(fontsize = 20),
+                                    title_gp = gpar(fontsize = 20)))
+draw(hm, heatmap_legend_side = "bottom")
+#################################
 ```
 
 ```{r}

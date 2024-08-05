@@ -25,6 +25,7 @@ DEBUG <- TRUE
 # numbers for the paper
 figure_names <- hash()
 # ATAC/code
+figure_names['GOenrichment_sub25_I_MF.pdf'] <- 'Fig_3C.pdf'
 # ...
 # barcoding/code
 figure_names['SKMEL5_barcode_propRankAbundance_comparison.pdf'] <- 'Fig_2A.pdf'
@@ -33,11 +34,15 @@ figure_names['SKMEL5_barcode_FCdensity_bcOverlay.pdf'] <- 'Fig_2B.pdf'
 # dose_response/code
 # ...
 # GO_correlations/code
+figure_names['RNA-ATACsub25_MF.svg'] <- 'Fig_3D.svg'
 # ...
 # ion_flux/code
+figure_names['SOCE_untreated_idling.pdf'] <- 'Fig_3E.pdf'
 # ...
 # RNA/code
 figure_names['SKMEL5_sublines_timeSeriesRNA_rld_Fig.pdf'] <- 'Fig_1B.pdf'
+figure_names['GOenrichment_genesUp_MF.pdf'] <- 'Fig_3A.pdf'
+figure_names['ca-genes_fold-change_ComplexHeatmap.pdf'] <- 'Fig_3B.pdf'
 # ...
 # scRNA/code
 figure_names['UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentPoint.svg'] <- 'Fig_1A.svg'

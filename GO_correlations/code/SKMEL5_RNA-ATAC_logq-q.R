@@ -193,6 +193,7 @@ ggscatter(Up_all_BP_complete_sorted,
         legend.position = "none") 
 ggsave("RNA-ATACsub25_BP.svg", width = 7, height = 5)
 
+########### FIGURE 3D ###########
 ggscatter(Up_all_MF_complete_sorted, 
           x = "logp.x", y = "logp.y",
           add = "reg.line", size = 1) +
@@ -205,8 +206,9 @@ ggscatter(Up_all_MF_complete_sorted,
   theme(axis.text=element_text(size=16), axis.title=element_text(size=16),
         strip.text.x = element_text(size=16), strip.text.y = element_text(size=16),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        legend.position = "none") 
+        legend.position = "none")
 ggsave("RNA-ATACsub25_MF.svg", width = 7, height = 5)
+#################################
 
 ggscatter(Up_all_CC_complete_sorted, 
           x = "logp.x", y = "logp.y",
