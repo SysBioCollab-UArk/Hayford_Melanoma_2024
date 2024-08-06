@@ -428,18 +428,26 @@ hm2 <- heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]),
 library(ComplexHeatmap)
 library(circlize)
 pdf(file="ca-genes_fold-change_ComplexHeatmap.pdf", height=14)
+
 x <- as.matrix(b[,!grepl("_0",colnames(b))])
 ceil_x <- ceiling(max(abs(x)))
+
 col_fun = colorRamp2(seq(-ceil_x, ceil_x, ceil_x / 10), bluered(21))
+
 panel_fun = function(index, nm) {
     grid.rect(height = unit(1.5, "npc"), just = c('center', 'bottom'),
               gp = gpar(lwd = 0))
     grid.text(nm, 0.5, 0.75, just = c('center', 'bottom'), 
               gp = gpar(fontsize = 20, fontface = 'bold'))
 }
+
 column_ha <- HeatmapAnnotation(
   subclones = anno_block(align_to = list("SC01" = 1:2, "SC07" = 3:4, "SC10" = 5:6)),
-  days = anno_text(c("3d", "8d", "3d", "8d", "3d", "8d"), rot = 0, gp = gpar(fontsize = 20)))
+  days = anno_text(c("3d", "8d", "3d", "8d", "3d", "8d"), rot = 0, 
+                   just = 'center', location = unit(0.6, "npc"), 
+                   gp = gpar(fontsize = 20))
+)
+
 hm <- Heatmap(x, name="Log2 Fold Change", col = col_fun, row_names_gp = gpar(fontsize = 14), 
         show_column_names = FALSE, cluster_columns = FALSE, cluster_rows = FALSE, 
         heatmap_height = unit(12.5, "in"), top_annotation = column_ha,

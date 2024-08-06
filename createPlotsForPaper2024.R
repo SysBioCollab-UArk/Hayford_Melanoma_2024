@@ -43,6 +43,8 @@ figure_names['SOCE_untreated_idling.pdf'] <- 'Fig_3E.pdf'
 figure_names['SKMEL5_sublines_timeSeriesRNA_rld_Fig.pdf'] <- 'Fig_1B.pdf'
 figure_names['GOenrichment_genesUp_MF.pdf'] <- 'Fig_3A.pdf'
 figure_names['ca-genes_fold-change_ComplexHeatmap.pdf'] <- 'Fig_3B.pdf'
+figure_names['Ferroptosis_heatmap_annot.pdf'] <- 'Fig_4A_main.pdf'
+figure_names['Ferroptosis_heatmap_annot_legend.pdf'] <- 'Fig_4A_legend.pdf'
 # ...
 # scRNA/code
 figure_names['UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentPoint.svg'] <- 'Fig_1A.svg'

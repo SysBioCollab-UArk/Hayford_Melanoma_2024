@@ -269,7 +269,7 @@ ggplot(RSL3_UTvI_all, aes(x=conc, y=p, color=State, fill=State)) +
         legend.title = element_text(size=8),
         legend.position = c(0.75,0.93),
         axis.title=element_text(size=12),
-        panel.grid = element_blank())
+        panel.grid = element_blank(), rect=element_rect(fill="transparent"))
 
 if(SAVEPLOTS) ggsave("RSL3-all_DRC_2024.pdf")
 ```

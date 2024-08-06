@@ -258,23 +258,69 @@ fer <- list(genes=Ferr_fold$Gene,
 ## Using `ComplexHeatmap()`
 
 ```{r fig.height=8, fig.width=8}
+########### FIGURE 3B ###########
 if(SAVEPLOTS)
-    pdf("Ferroptosis_heatmap_annot.pdf") #, width = 8, height = 8)
+    cairo_pdf("Ferroptosis_heatmap_annot.pdf", width = 4.5, height = 8)
 
+# global Heatmap options
 ht_opt(
     legend_title_gp = gpar(fontsize = 8, fontface = "bold"), 
     legend_labels_gp = gpar(fontsize = 8), 
     heatmap_column_names_gp = gpar(fontsize = 8),
     heatmap_column_title_gp = gpar(fontsize = 10),
-    heatmap_row_title_gp = gpar(fontsize = 8)
+    heatmap_row_title_gp = gpar(fontsize = 8),
+    legend_gap = unit(c(0, 4), "mm")
 )
 
-ht_list = Heatmap(as.matrix(fer$fold_exp), name = "Log2 fold expression",
-                  width = unit(8, "cm"), 
-                  cluster_rows = FALSE, cluster_columns = FALSE,
-                  row_names_side = "left", row_names_gp = gpar(fontsize = 8)) +
-    Heatmap(fer$annot1, name = "GO:1", col = annots_col, width = unit(5, "mm")) + 
-    Heatmap(fer$annot2, name = "GO:2", col = annots_col, width = unit(5, "mm"))
+panel_fun = function(index, nm) {
+    grid.rect(height = unit(1.5, "npc"), just = c('center', 'top'),
+              gp = gpar(lwd = 0))
+    grid.text(nm, 0.5, -0.5, just = c('center', 'bottom'), 
+              gp = gpar(fontsize = 14, fontface = 'bold'))
+}
 
-if(SHOWPLOTS) ht_list
+# column labels at the bottom
+column_ha <- HeatmapAnnotation(
+  days = anno_text(c("3d", "8d", "3d", "8d", "3d", "8d"), which = 'column', rot = 0, 
+                   just = 'center', location = unit(0.3, "npc"), 
+                   gp = gpar(fontsize = 14)),
+  subclones = anno_block(align_to = list("SC01" = 1:2, "SC07" = 3:4, "SC10" = 5:6))
+)
+
+# make Heatmap list but don't show the legends
+ht_list <- Heatmap(as.matrix(fer$fold_exp), name = "Log2 Fold Expression",
+                  width = unit(8, "cm"), show_column_names = FALSE,
+                  cluster_rows = FALSE, cluster_columns = FALSE,
+                  row_names_side = "left", row_names_gp = gpar(fontsize = 8),
+                  bottom_annotation = column_ha,
+                  heatmap_legend_param = list(direction = 'horizontal'),
+                  show_heatmap_legend = FALSE) + 
+  Heatmap(fer$annot1, name = "GO:1", show_column_names = FALSE,
+          col = annots_col, width = unit(5, "mm"), 
+            na_col = 'white', heatmap_legend_param = list(title = "\nGene Ontology"),
+          show_heatmap_legend = FALSE) + 
+  Heatmap(fer$annot2, name = "GO:2", show_column_names = FALSE,
+          col = annots_col, width = unit(5, "mm"), 
+            na_col = 'white', heatmap_legend_param = list(title = NULL),
+          show_heatmap_legend = FALSE)
+
+draw(ht_list, padding = unit(c(4, 4, 4, 4), "mm")) # padding(b,l,t,r)
+
+# make the combined legend
+if(SAVEPLOTS)
+    cairo_pdf("Ferroptosis_heatmap_annot_legend.pdf", width = 4, height = 2)
+
+ldg1 <- color_mapping_legend(ht_list@ht_list[[1]]@matrix_color_mapping, plot = FALSE)
+ldg2 <- color_mapping_legend(ht_list@ht_list[[2]]@matrix_color_mapping, plot = FALSE,
+                             title = "Gene Ontology")
+ldg3 <- color_mapping_legend(ht_list@ht_list[[3]]@matrix_color_mapping, plot = FALSE,
+                             title = NULL)
+# merge the GO legends together
+pd23 <- packLegend(ldg2, ldg3, row_gap = unit(0, "mm"))
+# pack the expression legend and GO legend together side-by-side
+pd123 <- packLegend(ldg1, pd23, direction = "horizontal")
+
+draw(pd123)
+dev.off()
+#################################
 ```
