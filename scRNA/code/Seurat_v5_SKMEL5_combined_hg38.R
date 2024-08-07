@@ -10,6 +10,7 @@ library(reshape2)
 library(Hmisc)
 library(ggpubr)
 library(transport)
+library(stringr)
 options(Seurat.object.assay.version = "v5")
 
 # if (Sys.getenv("RSTUDIO") == "1") {
@@ -92,13 +93,15 @@ combined <- SCTransform(combined, assay = 'RNA', new.assay.name = 'SCT',
 all.genes <- rownames(combined)
 combined <- ScaleData(combined, assay = 'SCT', features = all.genes)
 
+# Running the PCA here (stochastic, can't set a seed) #####
 combined <- RunPCA(combined, assay = 'SCT', features = VariableFeatures(object = combined))
 VizDimLoadings(combined, dims = 1:2, reduction = "pca")
 DimPlot(combined, reduction = "pca")
 
-combined <- FindNeighbors(combined, assay = 'SCT', dims = 1:10)
+combined <- FindNeighbors(combined, assay = 'SCT', dims = 1:10) # 10 clusters
 combined <- FindClusters(combined, assay = 'SCT', resolution = 0.5)
 
+# When RunUMAP is called, default seed is set to 42 #####
 combined <- RunUMAP(combined, assay = 'SCT', dims = 1:10)
 
 DimPlot(combined, reduction = "umap", group.by = "orig.ident") +
@@ -114,7 +117,6 @@ ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg.svg", width = 4, height = 3)
 #   theme(axis.text = element_text(size = 14), legend.position = "right",
 #         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_CCPhase_leg.pdf", width = 5, height = 3)
-# 
 
 combined@meta.data <- combined@meta.data %>% mutate(State = ifelse((combined$Phase %in% c("G2M", "S")), "fast_div", "slow_div"))
 
@@ -125,7 +127,7 @@ DimPlot(combined, reduction = "umap", group.by = "State") +
   xlim(-11.5, 11.5) + ylim(-11.5, 11.5)
 ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_CCState_leg.svg", width = 4, height = 3)
 
-
+### NEED THIS PLOT FOR SEURAT CLUSTERS ###
 # DimPlot(combined, reduction = "umap", group.by = "seurat_clusters") +
 #   theme_bw() + #scale_color_manual(values = c("blue", "red")) +
 #   theme(axis.text = element_text(size = 14), legend.position = "right",
@@ -1032,7 +1034,7 @@ region_all_n <- data.frame(name = unique(region_all_table_n$name),
                                      paste("n =", as.character(region_all_table_n$num[3])),
                                      paste("n =", as.character(region_all_table_n$num[4]))))
 
-########### FIGURE 1E ###########
+########### FIGURE 1E ########### NEED TO FIX THIS - CLUSTERS CHANGE
 ggplot(region_all_table, aes(x = name, y = freq, group = State, fill = State)) +
   theme_classic() + 
   geom_bar(stat = "identity", color = "black") +
