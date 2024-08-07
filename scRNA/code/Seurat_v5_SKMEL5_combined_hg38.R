@@ -128,11 +128,11 @@ DimPlot(combined, reduction = "umap", group.by = "State") +
 ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_CCState_leg.svg", width = 4, height = 3)
 
 ### NEED THIS PLOT FOR SEURAT CLUSTERS ###
-# DimPlot(combined, reduction = "umap", group.by = "seurat_clusters") +
-#   theme_bw() + #scale_color_manual(values = c("blue", "red")) +
-#   theme(axis.text = element_text(size = 14), legend.position = "right",
-#         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-#   ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_clusters_leg.pdf", width = 5, height = 3)
+DimPlot(combined, reduction = "umap", group.by = "seurat_clusters") +
+  theme_bw() + #scale_color_manual(values = c("blue", "red")) +
+  theme(axis.text = element_text(size = 14), legend.position = "right",
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_clusters_leg.pdf", width = 5, height = 3)
 
 
 ######
