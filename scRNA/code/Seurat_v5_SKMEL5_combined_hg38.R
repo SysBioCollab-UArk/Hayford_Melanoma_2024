@@ -355,8 +355,21 @@ I_cycling_GO <- enrichGO(gene = rownames(subset(I_cycling.markers, avg_log2FC > 
                          qvalueCutoff  = 0.05)
 
 library(enrichplot)
-dotplot(I_cycling_GO, showCategory=10) 
-ggsave("Idling_smallClusterGO_BP.pdf", width = 6, height = 4)
+library(scales)
+########### FIGURE S1B ###########
+dotplot(I_cycling_GO, showCategory=10, label_format=50)  + 
+  labs(x="Gene Ratio") +
+  theme(plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=6), axis.text.y = element_text(size=16),
+        axis.text.x = element_text(size=14),
+        axis.title=element_text(size=14, face="bold"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size=12, face="bold", vjust=2), 
+        legend.position = 'right', legend.box = 'vertical') +
+  set_enrichplot_color(type = "fill", name = "p.adjust", 
+                       labels = scales::label_scientific())
+ggsave("Idling_smallClusterGO_BP.pdf", width = 7.2, height = 5)
+##################################
 
 I_noncycling_GO <- enrichGO(gene = rownames(subset(I_noncycling.markers, avg_log2FC > 0.5)),
                          universe = Features(combined[["RNA"]]),
@@ -413,8 +426,19 @@ UT_outcast_GO <- enrichGO(gene = rownames(subset(UT_outcast.markers, avg_log2FC 
                   pvalueCutoff  = 0.01,
                   qvalueCutoff  = 0.05)
 
-dotplot(UT_outcast_GO, showCategory=10, label_format = 60) 
-ggsave("Untreated_smallClusterGO_BP.pdf", width = 9, height = 4)
+########### FIGURE S1A ###########
+dotplot(UT_outcast_GO, showCategory=10, label_format = 60) + 
+  labs(x="Gene Ratio") +
+  theme(plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
+        axis.text=element_text(size=6), axis.text.y = element_text(size=16),
+        axis.text.x = element_text(size=14),
+        axis.title=element_text(size=14, face="bold"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size=12, face="bold"), 
+        legend.position = 'right', legend.box = 'vertical') +
+  scale_y_discrete(labels = label_wrap(50))
+ggsave("Untreated_smallClusterGO_BP.pdf", width = 8, height = 5)
+##################################
 
 UT_rest_GO <- enrichGO(gene = rownames(subset(UT_rest.markers, avg_log2FC > 0.5)),
                           universe = Features(combined[["RNA"]]),
@@ -657,11 +681,12 @@ t2$BCnum <- as.integer(factor(t2$lineageColored, levels = unique(bcNum_prop_comp
 BCnum <- subset(t2, select = c("BCnum"))
 combined <- AddMetaData(combined, BCnum, col.name = "BCnum")
 
-########### FIGURE 2C ###########
+########### FIGURES 2C and S2D ###########
 fig_4BCs_idxs <- c(2, 5, 13, 9)
 fig_4BCs_plots <- list()
-for (i in seq(25)){
-  # print(i)
+fig_otherBCs_plots <- list()
+for (i in seq(24)){
+  print(i)
   tint1 <- data.frame(ifelse(combined@meta.data$BCnum == i, 1, 0.1),
                       row.names = rownames(combined@meta.data))
   names(tint1) <- "Tint1"
@@ -692,6 +717,8 @@ for (i in seq(25)){
     ggtitle(paste("Barcode",i))
   
   # Save plots for barcodes 2, 5, 9 and 13
+  mg_trb = -0.35 # margin for top, right, and bottom
+  mg_l = -0.15 # margin for left
   if (i %in% fig_4BCs_idxs){
     if (i == 2 || i == 5){
       g <- g + labs(x = "") + scale_x_continuous(labels=rep("", 5))
@@ -699,11 +726,38 @@ for (i in seq(25)){
     if (i == 5 || i == 9){
       g <- g + labs(y = "") + scale_y_continuous(labels=rep(str_pad("", 4, "left"), 6))
     }
-    if (i == 2){ g <- g + theme(plot.margin=unit(c(0,-0.35,-0.35,0), "cm")) }
-    else if (i == 5){ g <- g + theme(plot.margin=unit(c(0,0,-0.35,-0.15), "cm")) }
-    else if (i == 9){ g <- g + theme(plot.margin=unit(c(-0.35,0,0,-0.15), "cm")) }
-    else if (i == 13){ g <- g + theme(plot.margin=unit(c(-0.35,-0.35,0,0), "cm")) }
+    if (i == 2){ g <- g + theme(plot.margin=unit(c(0,mg_trb,mg_trb,0), "cm")) } # (t,r,b,l)
+    else if (i == 5){ g <- g + theme(plot.margin=unit(c(0,0,mg_trb,mg_l), "cm")) }
+    else if (i == 9){ g <- g + theme(plot.margin=unit(c(mg_trb,0,0,mg_l), "cm")) }
+    else if (i == 13){ g <- g + theme(plot.margin=unit(c(mg_trb,mg_trb,0,0), "cm")) }
     fig_4BCs_plots[[length(fig_4BCs_plots)+1]] <- g 
+  }
+  # Save plots for other barcodes
+  else{
+    if (i < 21 & i != 1 & i != 7 & i != 12 & i != 17){
+      g <- g + labs(x = "") + labs(y = "") + scale_x_continuous(labels=rep("", 5)) + 
+        scale_y_continuous(labels=rep(str_pad("", 6, "left"), 6)) # 4
+    }
+    else if (i == 1 || i == 7 || i == 12 || i == 17){
+      g <- g + labs(x = "") + scale_x_continuous(labels=rep("", 5))
+    }
+    else if (i > 21){
+      g <- g + labs(y = "") + scale_y_continuous(labels=rep(str_pad("", 6, "left"), 6)) # 4
+    }
+    # (t,r,b,l)
+    mg_tb = -0.35
+    mg_l = -0.35
+    mg_r = -0.35
+    if (i == 1){ g <- g + theme(plot.margin=unit(c(0,mg_r*1.5,mg_tb,0), "cm")) } # top left
+    else if (i == 6){ g <- g + theme(plot.margin=unit(c(0,0,mg_tb,mg_l*1.5), "cm")) } # top right
+    else if (i == 21){ g <- g + theme(plot.margin=unit(c(mg_tb,mg_r*1.5,0,0), "cm")) } # bottom left
+    else if (i == 24){ g <- g + theme(plot.margin=unit(c(mg_tb,0,0,mg_l*1.5), "cm")) } # bottom right
+    else if (i == 7 || i == 12 || i == 17){ g <- g + theme(plot.margin=unit(c(mg_tb,mg_r*1.5,mg_tb,0), "cm")) } # left side
+    else if (i == 11 || i == 16 || i == 20){ g <- g + theme(plot.margin=unit(c(mg_tb,0,mg_tb,mg_l*1.5), "cm")) } # right side
+    else if (i == 3 || i == 4){ g <- g + theme(plot.margin=unit(c(0,mg_r,mg_tb,mg_l), "cm")) } # top row
+    else if (i == 22 || i == 23){ g <- g + theme(plot.margin=unit(c(mg_tb,mg_r,0,mg_l), "cm")) } # bottom row
+    else{ g <- g + theme(plot.margin=unit(c(mg_tb,mg_r,mg_tb,mg_l), "cm")) } # middle
+    fig_otherBCs_plots[[length(fig_otherBCs_plots)+1]] <- g
   }
   
   if (!dir.exists("UMAP_top25BCs_byNum")){
@@ -714,8 +768,10 @@ for (i in seq(25)){
 
 fig_4BCs <- ggarrange(fig_4BCs_plots[[1]], fig_4BCs_plots[[2]], 
                       fig_4BCs_plots[[4]], fig_4BCs_plots[[3]], ncol=2, nrow=2)
-fig_4BCs
 ggsave("UMAP_combined_lineageID_tinted_BCs_2_5_13_9.svg", width=6, height=4)
+
+fig_otherBCs <- ggarrange(plotlist=fig_otherBCs_plots, ncol=4, nrow=5)
+ggsave("UMAP_combined_lineageID_tinted_BCs_others.svg", width=8, height=7)
 #################################
 
 ####

@@ -177,50 +177,56 @@ Up_all_GO$GOtype <- factor(Up_all_GO$GOtype, levels = c("BP", "MF", "CC"))
 #         legend.position = "none") + 
 #   ggsave("RNA-ATACsub25_allGOtypes.svg", width = 12, height = 14)
 
-##
-ggscatter(Up_all_BP_complete_sorted, 
-          x = "logp.x", y = "logp.y",
+########### FIGURE S3F ###########
+ggscatter(Up_all_BP_complete_sorted, x = "logp.x", y = "logp.y", 
           add = "reg.line", size = 1) +
-  stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 5) +
+  geom_smooth(method = "lm", color = "black") +
+  stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 6,
+           label.x.npc=0.87, label.y.npc=0.95) +
   ggrepel::geom_label_repel(data = Up_all_BP_complete_sorted[1:10,],
-                            aes(label = Description), size = 3) +
+                            aes(label = Description), size = 4) +
   theme_bw() +
   labs(x=expression("-"~Log[10]~"(p)"~GO~Terms[Transcriptomics]),
        y=expression("-"~Log[10]~"(p)"~GO~Terms[Epigenomics])) +
-  theme(axis.text=element_text(size=16), axis.title=element_text(size=16),
-        strip.text.x = element_text(size=16), strip.text.y = element_text(size=16),
+  theme(axis.text=element_text(size=20), axis.title=element_text(size=20),
+        strip.text.x = element_text(size=20), strip.text.y = element_text(size=20),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         legend.position = "none") 
-ggsave("RNA-ATACsub25_BP.svg", width = 7, height = 5)
-
-########### FIGURE 3D ###########
-ggscatter(Up_all_MF_complete_sorted, 
-          x = "logp.x", y = "logp.y",
-          add = "reg.line", size = 1) +
-  stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 5) +
-  ggrepel::geom_label_repel(data = Up_all_MF_complete_sorted[1:10,],
-                            aes(label = Description), size = 3) +
-  theme_bw() +
-  labs(x=expression("-"~Log[10]~"(p)"~GO~Terms[Transcriptomics]),
-       y=expression("-"~Log[10]~"(p)"~GO~Terms[Epigenomics])) +
-  theme(axis.text=element_text(size=16), axis.title=element_text(size=16),
-        strip.text.x = element_text(size=16), strip.text.y = element_text(size=16),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        legend.position = "none")
-ggsave("RNA-ATACsub25_MF.svg", width = 7, height = 5)
+ggsave("RNA-ATACsub25_BP.svg", width = 7, height = 5.5)
 #################################
 
-ggscatter(Up_all_CC_complete_sorted, 
-          x = "logp.x", y = "logp.y",
+########### FIGURE 3D ###########
+ggscatter(Up_all_MF_complete_sorted, x = "logp.x", y = "logp.y",
           add = "reg.line", size = 1) +
-  stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 5) +
-  ggrepel::geom_label_repel(data = Up_all_CC_complete_sorted[1:10,],
-                            aes(label = Description), size = 3) +
+  geom_smooth(method = "lm", color = "black") +
+  stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 6,
+           label.x.npc=0, label.y.npc=1) +
+  ggrepel::geom_label_repel(data = Up_all_MF_complete_sorted[1:10,],
+                            aes(label = Description), size = 4) +
   theme_bw() +
   labs(x=expression("-"~Log[10]~"(p)"~GO~Terms[Transcriptomics]),
        y=expression("-"~Log[10]~"(p)"~GO~Terms[Epigenomics])) +
-  theme(axis.text=element_text(size=16), axis.title=element_text(size=16),
-        strip.text.x = element_text(size=16), strip.text.y = element_text(size=16),
+  theme(axis.text=element_text(size=20), axis.title=element_text(size=20),
+        strip.text.x = element_text(size=20), strip.text.y = element_text(size=20),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        legend.position = "none")
+ggsave("RNA-ATACsub25_MF.svg", width = 7, height = 5.5)
+#################################
+
+########### FIGURE S3G ###########
+ggscatter(Up_all_CC_complete_sorted, x = "logp.x", y = "logp.y",
+          add = "reg.line", size = 1) +
+  geom_smooth(method = "lm", color = "black") +
+  stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 6,
+           label.x.npc=0.1, label.y.npc=0.95) +
+  ggrepel::geom_label_repel(data = Up_all_CC_complete_sorted[1:10,],
+                            aes(label = Description), size = 4) +
+  theme_bw() +
+  labs(x=expression("-"~Log[10]~"(p)"~GO~Terms[Transcriptomics]),
+       y=expression("-"~Log[10]~"(p)"~GO~Terms[Epigenomics])) +
+  theme(axis.text=element_text(size=20), axis.title=element_text(size=20),
+        strip.text.x = element_text(size=20), strip.text.y = element_text(size=20),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         legend.position = "none") 
-ggsave("RNA-ATACsub25_CC.svg", width = 7, height = 5)
+ggsave("RNA-ATACsub25_CC.svg", width = 7, height = 5.5)
+#################################

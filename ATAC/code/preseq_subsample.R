@@ -68,7 +68,7 @@ ggplot(c_res) + theme_bw() +
   geom_line(aes(x=total_reads/10^6, 
                 y=distinct_reads/10^6, 
                 color=Library, linetype = Library), 
-            size=1) + 
+            linewidth=1) + 
   # coord_cartesian(x=c(0,75), y=c(0,37.5)) +
   xlab("Sequenced reads (M)") + 
   ylab("Distinct reads (M)") +
@@ -271,31 +271,37 @@ c_res_colors <- bind_rows(c_res_UT, c_res_I, c_res_I_25)
 c_res_colors <- as.data.frame(c_res_colors)
 c_res_colors$Library <- factor(c_res_colors$Library, levels = c("Untreated", "Idling", "Idling_25"))
 
+########### FIGURE S3A ###########
 ggplot(c_res_colors) + theme_bw() +
   geom_line(aes(x=total_reads/10^6, 
                 y=distinct_reads/10^6, 
                 color=Library), 
             size=1) + 
-  xlab("Sequenced reads (M)") + 
-  ylab("Distinct reads (M)") +
+  xlab("Sequenced Reads (M)") + 
+  ylab("Distinct Reads (M)") +
   # ggtitle("Observed Complexity of ATAC-seq Libraries") +
-  scale_color_manual(values = c("red", "blue", "cyan")) +
+  scale_color_manual(values = c("red", "blue", "cyan"), 
+                     labels = c('Untreated', 'Idling', 'Idling (25%\nsubsampled)')) +
   theme(plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5),
-        legend.position = "none",
+        legend.title = element_blank(), legend.text = element_text(size=10),
+        legend.position = c(0.2, 0.8),
         axis.text=element_text(size=12),
         axis.title=element_text(size=12),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank())
 ggsave("cCurve_colors_SKMEL5.pdf", width = 4, height = 3)
+##################################
 
 insert_colors_dedup <- bind_rows(insert_UT_dedup, insert_I_dedup, insert_I_25_dedup)
 insert_colors_dedup$Library <- factor(insert_colors_dedup$Library, 
                                         levels = c("Untreated", "Idling", "Idling_25"))
 
+########### FIGURE S3B ###########
 plt_color <- ggplot(insert_colors_dedup, aes(x=insert_size, y=All_Reads.fr_count, color=Library)) +
   geom_line(size = 0.7) +
-  scale_color_manual(values = c("red", "blue", "cyan")) +
+  scale_color_manual(values = c("red", "blue", "cyan"), 
+                     labels = c('Untreated', 'Idling', 'Idling (25%\nsubsampled)')) +
   coord_cartesian(x=c(0,800)) +
   xlab("Insert Size (bp)") +
   ylab("Read Count") +
@@ -303,14 +309,15 @@ plt_color <- ggplot(insert_colors_dedup, aes(x=insert_size, y=All_Reads.fr_count
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5),
-        legend.position = "right",
-        axis.text=element_text(size=14),
-        axis.title=element_text(size=14),
+        legend.title = element_blank(), legend.text = element_text(size=10),
+        legend.position = c(0.5, 0.8),
+        axis.text=element_text(size=12),
+        axis.title=element_text(size=12),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank()) 
 plt_color
-
-ggsave("ISM_colors_SKMEL5.pdf")
-leg <- get_legend(plt_color)
-as_ggplot(leg)
-ggsave("ATAClib_colors_legend.pdf")
+ggsave("ISM_colors_SKMEL5.pdf", width = 4, height = 3)
+##################################
+# leg <- get_legend(plt_color)
+# as_ggplot(leg)
+# ggsave("ATAClib_colors_legend.pdf")

@@ -24,28 +24,40 @@ DEBUG <- TRUE
 # Create the hash for copying plots created by the R scripts to the figure 
 # numbers for the paper
 figure_names <- hash()
+
 # ATAC/code
 figure_names['GOenrichment_sub25_I_MF.pdf'] <- 'Fig_3C.pdf'
-# ...
+figure_names['cCurve_colors_SKMEL5.pdf'] <- 'Fig_S3A.pdf'
+figure_names['ISM_colors_SKMEL5.pdf'] <- 'Fig_S3B.pdf'
+figure_names['venn_sharedPeaks.pdf'] <- 'Fig_S3C.pdf'
+figure_names['ATAC_sub25_distanceToTSS_UniqueShared.pdf'] <- 'Fig_S3D.pdf'
+figure_names['ATAC_sub25_annotationDistribution_UniqueShared.pdf'] <- 'Fig_S3E.pdf'
+
 # barcoding/code
 figure_names['SKMEL5_barcode_propRankAbundance_comparison.pdf'] <- 'Fig_2A.pdf'
 figure_names['SKMEL5_barcode_FCdensity_bcOverlay.pdf'] <- 'Fig_2B.pdf'
-# ...
+figure_names['SKMEL5_barcode_RPM_rank.pdf'] <- 'Fig_S2A.pdf'
+figure_names['SKMEL5_numUniqueBC_byCondition.pdf'] <- 'Fig_S2B.pdf'
+figure_names['SKMEL5_propShared_byReplicate.pdf'] <- 'Fig_S2C.pdf'
+
 # dose_response/code
-# ...
+figure_names['RSL3-all_DRC_2024.pdf'] <- 'Fig_4B.pdf'
+
 # GO_correlations/code
 figure_names['RNA-ATACsub25_MF.svg'] <- 'Fig_3D.svg'
-# ...
+figure_names['RNA-ATACsub25_BP.svg'] <- 'Fig_S3F.svg'
+figure_names['RNA-ATACsub25_CC.svg'] <- 'Fig_S3G.svg'
+
 # ion_flux/code
 figure_names['SOCE_untreated_idling.pdf'] <- 'Fig_3E.pdf'
-# ...
+
 # RNA/code
 figure_names['SKMEL5_sublines_timeSeriesRNA_rld_Fig.pdf'] <- 'Fig_1B.pdf'
 figure_names['GOenrichment_genesUp_MF.pdf'] <- 'Fig_3A.pdf'
 figure_names['ca-genes_fold-change_ComplexHeatmap.pdf'] <- 'Fig_3B.pdf'
 figure_names['Ferroptosis_heatmap_annot.pdf'] <- 'Fig_4A_main.pdf'
-figure_names['Ferroptosis_heatmap_annot_legend.pdf'] <- 'Fig_4A_legend.pdf'
-# ...
+figure_names['Ferroptosis_heatmap_annot_legend.pdf'] <- 'Fig_4A_leg.pdf'
+
 # scRNA/code
 figure_names['UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentPoint.svg'] <- 'Fig_1A.svg'
 figure_names['subsetHallmarks_acrossSKMEL5clusters.svg'] <- 'Fig_1C.svg'
@@ -54,6 +66,9 @@ figure_names['SKMEL5_allClusters_CellCycleState_proportion.pdf'] <- 'Fig_1E.pdf'
 figure_names['UMAP_combined_lineageID_tinted_BCs_2_5_13_9.svg'] <- 'Fig_2C.svg'
 figure_names['SKMEL5_I_CellCycleState_onlyDividing_proportionWAverage.pdf'] <- 'Fig_2D.pdf'
 figure_names['Idling_bcFC_correlation.pdf'] <- 'Fig_2E.pdf'
+figure_names['UMAP_combined_lineageID_tinted_BCs_others.svg'] <- 'Fig_S2D.svg'
+figure_names['Untreated_smallClusterGO_BP.pdf'] <- 'Fig_S1A.pdf'
+figure_names['Idling_smallClusterGO_BP.pdf'] <- 'Fig_S1B.pdf'
 
 # Set working directory to directory where this script is
 if (Sys.getenv("RSTUDIO") == "1") {

@@ -97,6 +97,7 @@ bcCount_melt <- melt(bcCount)
 bcCount_melt.summary <- aggregate(bcCount_melt, by=list(bcCount_melt$variable), FUN=mean)[c(1,3)]
 names(bcCount_melt.summary) <- c("variable", "value")
 
+########### FIGURE S2B ###########
 g1 <- ggplot(bcCount_melt, aes(x=variable,y=value,color=variable)) +
   geom_jitter(width = 0.2)+ theme_bw() +
   geom_crossbar(data = bcCount_melt.summary, aes(ymin=value, ymax=value, color = variable),
@@ -110,8 +111,9 @@ g1 <- ggplot(bcCount_melt, aes(x=variable,y=value,color=variable)) +
         legend.title = element_text(size=14), axis.title=element_text(size=14),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   ylim(300, 500)
-
-ggsave("SKMEL5_numUniqueBC_byCondition.pdf") #, width = 4, height = 5)
+g1
+ggsave("SKMEL5_numUniqueBC_byCondition.pdf", width = 3.5, height = 5)
+##################################
 
 # ggplot(subset(bcCount_melt, variable %in% c("Untreated", "Idling")),
 #               aes(x=variable,y=value,color=variable)) +
@@ -233,48 +235,51 @@ sharingBCs_withinRep_melt <- melt(sharingBCs_withinRep, id.vars = "Shared",
 sharingBCs_withinRep_melt_prop <-sharingBCs_withinRep_melt %>% group_by(variable) %>%
   mutate(prop = value/sum(value))
 
+########### FIGURE S2C ###########
 plot_propShared_byRep <- ggplot(sharingBCs_withinRep_melt_prop, aes(x=variable, y=prop, group = Shared, fill = Shared)) +
   geom_bar(position = "fill", stat = "identity", color = "black") +
   xlab("Condition") + theme_classic() +
+  scale_x_discrete(name = "Untreated                      Idling",
+                   labels = c("R1", "R2", "R3",
+                              "R1", "R2", "R3")) +
   scale_y_continuous(name = "Percent of Unique Barcodes", labels = scales::percent) +
   theme(axis.text = element_text(size = 12), axis.title=element_text(size=12),
-        legend.position = "right", legend.text = element_text(size = 12),
-        legend.title = element_text(size=14),
+        legend.position = "top", legend.text = element_text(size = 12),
+        legend.title = element_text(size=12), legend.box.spacing = margin(0.5),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 plot_propShared_byRep 
-ggsave("SKMEL5_propShared_byReplicate.pdf") #, width = 4, height = 5)
-plot_propShared_byRep_leg <- ggpubr::get_legend(plot_propShared_byRep)
+ggsave("SKMEL5_propShared_byReplicate.pdf", width = 3, height = 5)
+##################################
+# plot_propShared_byRep_leg <- ggpubr::get_legend(plot_propShared_byRep)
+# ggpubr::as_ggplot(plot_propShared_byRep_leg)
+# ggsave("SKMEL5_propShared_byReplicate_legend.pdf")
 
-ggpubr::as_ggplot(plot_propShared_byRep_leg)
-ggsave("SKMEL5_propShared_byReplicate_legend.pdf")
-
-
-
-###
 bcNum_order <- bcNum[order(bcNum$U1R1, decreasing=FALSE),]
 bcNum_melt <- melt(bcNum_order, id = "Barcode")
 bcNum_melt$Barcode <- factor(bcNum_melt$Barcode,
                              levels=as.character(bcNum_order$Barcode))
 
+########### FIGURE S2A ###########
 ggplot(bcNum_melt, aes(x=variable, y=Barcode, fill = value)) +
   geom_tile() + theme_bw() +
   scale_fill_gradient(name = expression(Log[10]~RPM), trans = "log10",
-                      low = "grey90", high = "black") +
+                      low = "grey90", high = "black", 
+                      labels = scales::label_comma(accuracy = 1)) +
   labs(x = "Condition", y = "Barcode") +
-  # scale_x_discrete(name = "Untreated                      Treated",
-  #                  limits = c("Rep1", "Rep2", "Rep3",
-  #                             "Rep1", "Rep2", "Rep3"))+
+  scale_x_discrete(name = "Untreated                      Idling",
+                   labels = c("R1", "R2", "R3",
+                              "R1", "R2", "R3")) +
+  geom_vline(xintercept = c(1.5, 2.5, 3.5, 4.5, 5.5), color='white') +
   theme(axis.text.y=element_blank(),
         axis.ticks.y=element_blank(),
-        legend.position = "right", legend.text = element_text(size = 14),
+        legend.position = "right", legend.text = element_text(size = 12),
         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
         axis.text=element_text(size=14),
-        legend.title = element_text(size=14), axis.title=element_text(size=14),
+        legend.title = element_text(size=12), axis.title=element_text(size=14),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-ggsave("SKMEL5_barcode_RPM_rank.pdf") #, width = 4, height = 5)
-
-#####
+ggsave("SKMEL5_barcode_RPM_rank.pdf", width = 4, height = 4.25)
+##################################
 
 bcNum_UT_test <- bcNum_order[,c(1:4)]
 names(bcNum_UT_test) <- c("Barcode", "Rep1", "Rep2", "Rep3")
@@ -370,7 +375,7 @@ bc_abundance <- ggplot(bcNum_prop_compare_sub, aes(x=Barcode, y=value, group = S
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     axis.text.x = element_text(size = 14, colour = "black", angle = 90, vjust = 0.5, hjust = 1),
     axis.text.y = element_text(size = 14, colour = "black"),
-    legend.position = c(0.8, 0.5), legend.text = element_text(size = 14),
+    legend.position.inside = c(0.8, 0.5), legend.text = element_text(size = 14),
     plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
     legend.title = element_blank(), axis.title=element_text(size=14)) +
   annotate("text", x=2, y=0.108, label="\u25cf") +

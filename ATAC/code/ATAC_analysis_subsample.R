@@ -75,9 +75,10 @@ plotAnnoPie(MacsCalls_I_Anno)
 vennpie(MacsCalls_UT_Anno)
 vennpie(MacsCalls_I_Anno)
 
+library(ggupset)
+
 upsetplot(MacsCalls_UT_Anno)
 upsetplot(MacsCalls_I_Anno)
-
 
 # Limma venn diagram
 peaks <- dir("../data/venn/", pattern = "*.narrowPeak", 
@@ -109,11 +110,13 @@ shared_peaks <- c("Untreated" = vd_counts$freq[2],
                   "Idling" = vd_counts$freq[1],
                   "Untreated&Idling" = vd_counts$freq[3])
 
+########### FIGURE S3C ###########
+pdf('venn_sharedPeaks.pdf', width=4, height=4)
 venn_sharedPeaks <- euler(shared_peaks)
-plot(venn_sharedPeaks, fills = c("red", "blue"),
-     shape = "ellipse", quantities = TRUE)
-dev.copy(png, "venn_sharedPeaks.png")
+plot(venn_sharedPeaks, fills = c("red", "lightblue"), shape = "ellipse", 
+     quantities = TRUE)
 dev.off()
+##################################
 
 upset(fromExpression(shared_peaks), order.by = "freq",
       sets.bar.color = c("blue", "red"), 
@@ -176,14 +179,14 @@ go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.H
 
 ########### FIGURE 3C ###########
 library(scales)
-dotplot(go_I_MF, font.size = 14, label_format = 40)+ 
+dotplot(go_I_MF, font.size = 14, label_format = 40) + 
   labs(x="Gene Ratio") +
   theme(legend.text = element_text(size = 12),
         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
         axis.text=element_text(size=6),
-        legend.title = element_text(size=12,face="bold"), 
+        legend.title = element_text(size=12, face="bold"), 
         legend.position = c(0.8, 0.32), legend.box = 'vertical',
-        axis.title=element_text(size=12, face="bold")) +
+        axis.title=element_text(size=14, face="bold")) +
   scale_y_discrete(labels = label_wrap(35))
 ggsave("GOenrichment_sub25_I_MF.pdf", width = 6, height = 6)
 #################################
@@ -206,20 +209,31 @@ names(files) <- c("Untreated", "Idling", "Shared")
 peakAnnoList <- lapply(files, annotatePeak, TxDb=txdb,
                        tssRegion=c(-3000, 3000), verbose=FALSE)
 
+########### FIGURE S3E ###########
 plotAnnoBar(peakAnnoList) +
-  theme(legend.text = element_text(size = 12), legend.position = "right", 
-        plot.title = element_text(size = 14, hjust = 0.5), axis.text=element_text(size=12),
-        legend.title = element_text(size=12), axis.title=element_text(size=12),
+  guides(fill=guide_legend(ncol=2)) +
+  theme(plot.title = element_blank(), #element_text(size = 12, hjust = 0.5), 
+        plot.margin = unit(c(0.1,1,0.1,-0.5), 'cm'), # (t,r,b,l)
+        axis.title=element_text(size = 20),
+        axis.text=element_text(size = 20),
+        legend.text = element_text(size = 16), legend.position = "bottom", 
+        legend.title = element_blank(), #element_text(size= 16), 
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-ggsave("ATAC_sub25_annotationDistribution_UniqueShared.pdf") #, width = 8, height = 6)
+ggsave("ATAC_sub25_annotationDistribution_UniqueShared.pdf", width = 6, height = 8)
+##################################
 
-
+########### FIGURE S3D ###########
 plotDistToTSS(peakAnnoList) +
-  theme(legend.text = element_text(size = 12), legend.position = "right", 
-        plot.title = element_text(size = 14, hjust = 0.5), axis.text=element_text(size=12),
-        legend.title = element_text(size=12), axis.title=element_text(size=12),
+  theme(plot.title = element_blank(), #element_text(size = 12, hjust = 0.5), 
+        plot.margin = unit(c(0.1,1,0.1,-0.5), 'cm'), # (t,r,b,l)
+        axis.title=element_text(size=24),
+        axis.text.x=element_text(size=20),
+        axis.text.y=element_text(size=24),
+        legend.text = element_text(size = 22), legend.position = "bottom", 
+        legend.title = element_blank(), #element_text(size=12), 
         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
-ggsave("ATAC_sub25_distanceToTSS_UniqueShared.pdf") #, width = 8, height = 6)
+ggsave("ATAC_sub25_distanceToTSS_UniqueShared.pdf", width = 7.5, height = 8)
+##################################
 
 tagMatrixList <- lapply(files, getTagMatrix, windows=promoter)
 plotAvgProf(tagMatrixList, xlim=c(-3000, 3000)) +

@@ -234,10 +234,10 @@ dotplot(ego_genesUp_MF, font.size = 14, label_format = 40) +
   labs(x="Gene Ratio") +
   theme(legend.text = element_text(size = 12),
         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
-        axis.text=element_text(size=6),
+        axis.text=element_text(size=6), 
         legend.title = element_text(size=12,face="bold"), 
         legend.position = c(0.8, 0.32), legend.box = 'vertical',
-        axis.title=element_text(size=12, face="bold")) +
+        axis.title=element_text(size=14, face="bold")) +
   scale_y_discrete(labels = label_wrap(35))
 ggsave("GOenrichment_genesUp_MF.pdf", width=6, height=6)
 #################################

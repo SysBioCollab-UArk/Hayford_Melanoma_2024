@@ -246,6 +246,7 @@ IC50_df$drug2 <- ifelse(IC50_df$drug2=="No","Control","Ferrostatin-1")
 
 
 ```{r Generate plots, fig.height=5, fig.width=3.5, warning=FALSE}
+########### FIGURE 4B ###########
 plot_labels <- c("Control" = "+RSL3", "Ferrostatin-1" = "+RSL3 + Fer-1")
 
 ggplot(RSL3_UTvI_all, aes(x=conc, y=p, color=State, fill=State)) +
@@ -272,5 +273,6 @@ ggplot(RSL3_UTvI_all, aes(x=conc, y=p, color=State, fill=State)) +
         panel.grid = element_blank(), rect=element_rect(fill="transparent"))
 
 if(SAVEPLOTS) ggsave("RSL3-all_DRC_2024.pdf")
+##################################
 ```
 
