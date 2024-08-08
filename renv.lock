@@ -3254,6 +3254,22 @@
       ],
       "Hash": "6c4748308cbe296a022cba26e118075a"
     },
+    "ggupset": {
+      "Package": "ggupset",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "ggplot2",
+        "grid",
+        "gtable",
+        "rlang",
+        "scales",
+        "tibble"
+      ],
+      "Hash": "78c97266d46bcec37e7dbd1820d88845"
+    },
     "gh": {
       "Package": "gh",
       "Version": "1.4.1",
