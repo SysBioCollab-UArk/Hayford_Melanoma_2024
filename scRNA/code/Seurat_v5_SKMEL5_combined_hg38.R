@@ -17,6 +17,7 @@ options(Seurat.object.assay.version = "v5")
 #   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # }
 
+### MOVE THIS LOGIC INTO createPlotsForPaper2024.R ###
 if (file.exists("combined_includingState.RData")) {
   message("The file 'combined_includingState.RData' already exists. Stopping this script to prevent running it again.")
   stop()
@@ -27,8 +28,10 @@ untreated <- Read10X(data.dir = "../data/Untreated/")
 idling <- Read10X(data.dir = "../data/Idling/")
 
 # Initialize the Seurat object with the raw (non-normalized data).
-untreated <- CreateSeuratObject(counts = untreated, project = "Untreated", min.cells = 3, min.features = 200)
-idling <- CreateSeuratObject(counts = idling, project = "Idling", min.cells = 3, min.features = 200)
+untreated <- CreateSeuratObject(counts = untreated, project = "Untreated", 
+                                min.cells = 3, min.features = 200)
+idling <- CreateSeuratObject(counts = idling, project = "Idling", 
+                             min.cells = 3, min.features = 200)
 
 # Add lineage information
 ## Untreated
@@ -38,8 +41,9 @@ barcode_cell_df_UT <- as.data.frame(t(barcode_cell_df_UT))
 colnames(barcode_cell_df_UT) <- c("Barcode", "Cell Barcode")
 barcode_cell_UT <- barcode_cell_df_UT[-1,]
 barcode_cell_UT$`Cell Barcode` <- paste(barcode_cell_UT$`Cell Barcode`, "-1", sep="")
-cellMeta_untreated$lineage <- as.character(barcode_cell_UT$Barcode[match(rownames(cellMeta_untreated),
-                                                                         barcode_cell_UT$`Cell Barcode`)])
+cellMeta_untreated$lineage <- 
+  as.character(barcode_cell_UT$Barcode[match(rownames(cellMeta_untreated), 
+                                             barcode_cell_UT$`Cell Barcode`)])
 cellMeta_untreated$lineage[nchar(as.character(cellMeta_untreated$lineage)) != 20] <- "XXX"
 lineageMeta_UT <- subset(cellMeta_untreated, select = "lineage")
 untreated <- AddMetaData(untreated, lineageMeta_UT, col.name = "lineage")
@@ -56,31 +60,30 @@ cellMeta_idling$lineage[nchar(as.character(cellMeta_idling$lineage)) != 20] <- "
 lineageMeta_I <- subset(cellMeta_idling, select = "lineage")
 idling <- AddMetaData(idling, lineageMeta_I, col.name = "lineage")
 
-combined <- merge(untreated, y = idling, add.cell.ids = c("Untreated", "Idling"), project = "Combined")
-
+combined <- merge(untreated, y = idling, add.cell.ids = c("Untreated", "Idling"), 
+                  project = "Combined")
 combined[["percent.mt"]] <- PercentageFeatureSet(combined, pattern = "^MT-")
-
 combined <- SCTransform(combined, assay = 'RNA',
                         new.assay.name = 'SCT',
-                        vars.to.regress = c('percent.mt', 'nFeature_RNA', 'nCount_RNA'))
+                        vars.to.regress = 
+                          c('percent.mt', 'nFeature_RNA', 'nCount_RNA'))
 
 VlnPlot(combined, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
 
 # combined <- subset(combined, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
 combined <- subset(combined, subset = lineage != "NA")
-
 combined <- NormalizeData(combined)
-
-combined <- CellCycleScoring(object = combined, s.features = cc.genes.updated.2019$s.genes,
-                             g2m.features = cc.genes.updated.2019$g2m.genes, assay = 'SCT',
-                             set.ident = TRUE)
-
+combined <- CellCycleScoring(object = combined, 
+                             s.features = cc.genes.updated.2019$s.genes,
+                             g2m.features = cc.genes.updated.2019$g2m.genes, 
+                             assay = 'SCT', set.ident = TRUE)
 combined <- SCTransform(combined, assay = 'RNA', new.assay.name = 'SCT',
-                        vars.to.regress = c('percent.mt', 'nFeature_RNA', 'nCount_RNA', 'S.Score', 'G2M.Score'))
+                        vars.to.regress = 
+                          c('percent.mt', 'nFeature_RNA', 'nCount_RNA', 
+                            'S.Score', 'G2M.Score'))
 
 # combined <- FindVariableFeatures(combined, assay = 'SCT', selection.method = "vst", nfeatures = 2000)
 # combined_features <- SelectIntegrationFeatures(combined_test, assay = c('SCT', 'SCT'), nfeatures = 2000, selection.method = "vst")
-
 
 # Identify the 10 most highly variable genes
 # top10 <- head(VariableFeatures(combined), 10)
@@ -94,7 +97,9 @@ all.genes <- rownames(combined)
 combined <- ScaleData(combined, assay = 'SCT', features = all.genes)
 
 # Running the PCA here (stochastic, can't set a seed) #####
-combined <- RunPCA(combined, assay = 'SCT', features = VariableFeatures(object = combined))
+# NOTE: Documentation says the seed for this is also set to 42 by default
+combined <- RunPCA(combined, assay = 'SCT', 
+                   features = VariableFeatures(object = combined))
 VizDimLoadings(combined, dims = 1:2, reduction = "pca")
 DimPlot(combined, reduction = "pca")
 
@@ -118,13 +123,14 @@ ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg.svg", width = 4, height = 3)
 #         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_CCPhase_leg.pdf", width = 5, height = 3)
 
-combined@meta.data <- combined@meta.data %>% mutate(State = ifelse((combined$Phase %in% c("G2M", "S")), "fast_div", "slow_div"))
+combined@meta.data <- combined@meta.data %>% 
+  mutate(State = ifelse((combined$Phase %in% c("G2M", "S")), "fast_div", "slow_div"))
 
 DimPlot(combined, reduction = "umap", group.by = "State") +
   theme_bw() + scale_color_manual(values = c("green3", "gold")) +
   theme(axis.text = element_text(size = 14), legend.position = "none",
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(-11.5, 11.5) + ylim(-11.5, 11.5)
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) #+
+  # xlim(-11.5, 11.5) + ylim(-11.5, 11.5)
 ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_CCState_leg.svg", width = 4, height = 3)
 
 ### NEED THIS PLOT FOR SEURAT CLUSTERS ###
@@ -133,47 +139,31 @@ DimPlot(combined, reduction = "umap", group.by = "seurat_clusters") +
   theme(axis.text = element_text(size = 14), legend.position = "right",
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_clusters_leg.pdf", width = 5, height = 3)
-
-
 ######
 
 # Determine metrics to plot present in seurat_control@meta.data
 metrics <-  c("nCount_RNA", "nFeature_RNA", "S.Score", "G2M.Score", "percent.mt")
 
 # Extract the UMAP coordinates for each cell and include information about the metrics to plot
-qc_data <- FetchData(combined, 
-                     vars = c(metrics, "ident", "umap_1", "umap_2"))
+qc_data <- FetchData(combined, vars = c(metrics, "ident", "umap_1", "umap_2"))
 
 # Adding cluster label to center of cluster on UMAP
-umap_label <- FetchData(combined, 
-                        vars = c("ident", "umap_1", "umap_2"))  %>%
+umap_label <- FetchData(combined, vars = c("ident", "umap_1", "umap_2"))  %>%
   as.data.frame() %>% 
   group_by(ident) %>%
   summarise(x=mean(umap_1), y=mean(umap_2))
 
-
 # Plot a UMAP plot for each metric
-f <- function() {
 map(metrics, function(qc){
-  ggplot(qc_data,
-         aes(umap_1, umap_2)) +
+  ggplot(qc_data, aes(umap_1, umap_2)) +
     theme_bw() +
-    geom_point(aes_string(color=qc), 
-               alpha = 0.7) +
-    scale_color_gradient(guide = FALSE, 
-                         low = "grey90", 
-                         high = "blue")  +
-    geom_text(data=umap_label, 
-              aes(label=ident, x, y)) +
+    geom_point(aes_string(color=qc), alpha = 0.7) +
+    scale_color_gradient(guide="none", low="grey90", high="blue")  +
+    # geom_text(data=umap_label, aes(label=ident, x, y)) +
     ggtitle(qc)
-
 }) %>%
   plot_grid(plotlist = .)
-ggsave("UMAP_combined_SKMEL5_hg38_QCmetrics_qcCCReg.svg",
-         width = 9, height = 6)
-}
-try(f()) # ADDING THIS TEMPORARILY SO THE SCRIPT WILL KEEP RUNNING EVEN WHEN IT ERRORS --LAH
-########
+ggsave("UMAP_combined_SKMEL5_hg38_QCmetrics_qcCCReg.svg", width = 9, height = 6)
 
 umap_vals <- as.data.frame(Embeddings(combined, reduction = "umap"))
 umap_vals_df <- dplyr::bind_rows(umap_vals)
@@ -202,8 +192,8 @@ phase_UT$Condition = "Untreated"
 phase_I <- FetchData(comb_I, vars = "Phase")
 phase_I$Condition = "Idling"
 phase_all <- rbind(phase_UT, phase_I)
-phase_all$Condition <- factor(phase_all$Condition, levels = c("Untreated", "Idling"))
-
+phase_all$Condition <- factor(phase_all$Condition, 
+                              levels = c("Untreated", "Idling"))
 
 # ggplot(phase_all, aes(x = Phase, group = Condition, color = Condition)) +
 #   theme_bw() + geom_bar(aes(fill=as.factor(Condition), y = (..count..)),
@@ -273,7 +263,6 @@ state_I$Condition = "Idling"
 state_all <- rbind(state_UT, state_I)
 state_all$Condition <- factor(state_all$Condition, levels = c("Untreated", "Idling"))
 
-# 
 # ggplot(state_all, aes(x = State, group = Condition, color = Condition)) +
 #   theme_bw() + geom_bar(aes(fill=as.factor(Condition), y = (..count..)),
 #                         position = "dodge", color = "black") +
@@ -289,7 +278,8 @@ state_all$Condition <- factor(state_all$Condition, levels = c("Untreated", "Idli
 
 # Percentages
 state_UT_table <- as.data.frame.matrix(table(state_UT))
-state_UT_table <- transform(state_UT_table, percent = Untreated / sum(state_UT_table$Untreated))
+state_UT_table <- transform(state_UT_table, 
+                            percent = Untreated / sum(state_UT_table$Untreated))
 state_UT_table$State <- rownames(state_UT_table)
 state_UT_table$Condition <- "Untreated"
 names(state_UT_table) <- c("Count", "Percent", "State", "Condition")
@@ -305,7 +295,7 @@ state_all_table_melt <- melt(state_all_table, id.vars = c("State", "Condition"),
                              measure.vars = "Percent")
 state_all_table_melt$Condition <- factor(state_all_table_melt$Condition, 
                                          levels = c("Untreated", "Idling"))
-# 
+
 # ggplot(state_all_table_melt, aes(x = State, y = value,
 #                                  group = Condition, fill = Condition)) +
 #   theme_bw() + geom_bar(stat = "identity", position = "dodge", color = "black") +
@@ -334,25 +324,28 @@ state_all_table_melt$Condition <- factor(state_all_table_melt$Condition,
 #         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_cellCycleStateBreakdown_byState_percent.pdf", width = 2.5, height = 4)
 
-
 ### do findmarkers (3 comparisons)
 Idents(combined) <- "seurat_clusters"
 
 # Idling - cycling vs non-cycling
 combined <- PrepSCTFindMarkers(combined)
-I_cycling.markers <- FindMarkers(object = combined, ident.1 = 6,
-                                  ident.2 = c(0,2,5,7), min.pct = 0.25)
-I_noncycling.markers <- FindMarkers(object = combined, ident.1 = c(0,2,5,7),
-                                 ident.2 = 6, min.pct = 0.25)
 
-I_cycling_GO <- enrichGO(gene = rownames(subset(I_cycling.markers, avg_log2FC > 0.5)),
-                         universe = Features(combined[["RNA"]]),
-                         OrgDb = org.Hs.eg.db,
-                         keyType = 'SYMBOL',
-                         ont = "BP",
-                         pAdjustMethod = "BH",
-                         pvalueCutoff  = 0.01,
-                         qvalueCutoff  = 0.05)
+### MANUALLY DEFINE SEURAT CLUSTERS STARTING HERE ###
+I_cycling.markers <- FindMarkers(object = combined, ident.1 = 6, 
+                                 ident.2 = c(0,3,5,7), min.pct = 0.25)
+# ident.1 = 6, 
+# ident.2 = c(0,2,5,7)
+
+I_noncycling.markers <- FindMarkers(object = combined, ident.1 = c(0,3,5,7), 
+                                    ident.2 = 6, min.pct = 0.25)
+# ident.1 = c(0,2,5,7), 
+# ident.2 = 6
+
+I_cycling_GO <- 
+  enrichGO(gene = rownames(subset(I_cycling.markers, avg_log2FC > 0.5)), 
+           universe = Features(combined[["RNA"]]), OrgDb = org.Hs.eg.db, 
+           keyType = 'SYMBOL', ont = "BP", pAdjustMethod = "BH", 
+           pvalueCutoff  = 0.01, qvalueCutoff  = 0.05)
 
 library(enrichplot)
 library(scales)
@@ -371,22 +364,24 @@ dotplot(I_cycling_GO, showCategory=10, label_format=50)  +
 ggsave("Idling_smallClusterGO_BP.pdf", width = 7.2, height = 5)
 ##################################
 
-I_noncycling_GO <- enrichGO(gene = rownames(subset(I_noncycling.markers, avg_log2FC > 0.5)),
-                         universe = Features(combined[["RNA"]]),
-                         OrgDb = org.Hs.eg.db,
-                         keyType = 'SYMBOL',
-                         ont = "CC",
-                         pAdjustMethod = "BH",
-                         pvalueCutoff  = 0.01,
-                         qvalueCutoff  = 0.05)
+I_noncycling_GO <- 
+  enrichGO(gene = rownames(subset(I_noncycling.markers, avg_log2FC > 0.5)), 
+           universe = Features(combined[["RNA"]]), OrgDb = org.Hs.eg.db, 
+           keyType = 'SYMBOL', ont = "CC", pAdjustMethod = "BH", #ont = "BP"
+           pvalueCutoff  = 0.01, qvalueCutoff  = 0.05)
 
-# dotplot(I_noncycling_GO, showCategory=20) # DON'T KNOW WHY THIS PLOT DOESN'T WORK. COMMENTING OUT FOR NOW --LAH
+dotplot(I_noncycling_GO, showCategory=10)
 
 # Idling vs Untreated
-I_markers <- FindMarkers(object = combined, ident.1 = c(0,2,5,6,7),
-                                 ident.2 = c(1,3,4,8,9), min.pct = 0.25)
-UT_markers <- FindMarkers(object = combined, ident.1 = c(1,3,4,8,9),
-                                  ident.2 = c(0,2,5,6,7), min.pct = 0.25)
+I_markers <- FindMarkers(object = combined, ident.1 = c(0,3,5,6,7), 
+                         ident.2 = c(1,2,4,8,9), min.pct = 0.25)
+# ident.1 = c(0,2,5,6,7), 
+# ident.2 = c(1,3,4,8,9)
+
+UT_markers <- FindMarkers(object = combined, ident.1 = c(1,2,4,8,9), 
+                          ident.2 = c(0,3,5,6,7), min.pct = 0.25)
+# ident.1 = c(1,3,4,8,9), 
+# ident.2 = c(0,2,5,6,7)
 
 I_GO <- enrichGO(gene = rownames(subset(I_markers, avg_log2FC > 0.5)),
                             universe = Features(combined[["RNA"]]),
@@ -409,13 +404,18 @@ UT_GO <- enrichGO(gene = rownames(subset(UT_markers, avg_log2FC > 0.5)),
                  pvalueCutoff  = 0.01,
                  qvalueCutoff  = 0.05)
 
-dotplot(UT_GO, showCategory=20)
+dotplot(UT_GO, showCategory=10)
 
 # Untreated - outcast vs rest
 UT_outcast.markers <- FindMarkers(object = combined, ident.1 = 8,
-                         ident.2 = c(1,3,4,9), min.pct = 0.25)
-UT_rest.markers <- FindMarkers(object = combined, ident.1 = c(1,3,4,9),
+                         ident.2 = c(1,2,4,9), min.pct = 0.25)
+# ident.1 = 8,
+# ident.2 = c(1,3,4,9)
+
+UT_rest.markers <- FindMarkers(object = combined, ident.1 = c(1,2,4,9),
                           ident.2 = 8, min.pct = 0.25)
+# ident.1 = 8,
+# ident.2 = c(1,3,4,9)
 
 UT_outcast_GO <- enrichGO(gene = rownames(subset(UT_outcast.markers, avg_log2FC > 0.5)),
                   universe = Features(combined[["RNA"]]),
@@ -427,7 +427,7 @@ UT_outcast_GO <- enrichGO(gene = rownames(subset(UT_outcast.markers, avg_log2FC 
                   qvalueCutoff  = 0.05)
 
 ########### FIGURE S1A ###########
-dotplot(UT_outcast_GO, showCategory=10, label_format = 60) + 
+dotplot(UT_outcast_GO, showCategory=10, label_format = 70) + 
   labs(x="Gene Ratio") +
   theme(plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
         axis.text=element_text(size=6), axis.text.y = element_text(size=16),
@@ -437,7 +437,7 @@ dotplot(UT_outcast_GO, showCategory=10, label_format = 60) +
         legend.title = element_text(size=12, face="bold"), 
         legend.position = 'right', legend.box = 'vertical') +
   scale_y_discrete(labels = label_wrap(50))
-ggsave("Untreated_smallClusterGO_BP.pdf", width = 8, height = 5)
+ggsave("Untreated_smallClusterGO_BP.pdf", width = 8.3, height = 5)
 ##################################
 
 UT_rest_GO <- enrichGO(gene = rownames(subset(UT_rest.markers, avg_log2FC > 0.5)),
@@ -449,7 +449,7 @@ UT_rest_GO <- enrichGO(gene = rownames(subset(UT_rest.markers, avg_log2FC > 0.5)
                           pvalueCutoff  = 0.01,
                           qvalueCutoff  = 0.05)
 
-dotplot(UT_rest_GO, showCategory=20)
+dotplot(UT_rest_GO, showCategory=10)
 
 # Untreated vs Idling - Small
 I_small.markers <- FindMarkers(object = combined, ident.1 = 6,
@@ -466,7 +466,7 @@ I_small_GO <- enrichGO(gene = rownames(subset(I_small.markers, avg_log2FC > 0.5)
                           pvalueCutoff  = 0.01,
                           qvalueCutoff  = 0.05)
 
-dotplot(I_small_GO, showCategory=20)
+dotplot(I_small_GO, showCategory=10)
 
 UT_small_GO <- enrichGO(gene = rownames(subset(UT_small.markers, avg_log2FC > 0.5)),
                        universe = Features(combined[["RNA"]]),
@@ -477,13 +477,18 @@ UT_small_GO <- enrichGO(gene = rownames(subset(UT_small.markers, avg_log2FC > 0.
                        pvalueCutoff  = 0.01,
                        qvalueCutoff  = 0.05)
 
-dotplot(UT_small_GO, showCategory=20)
+dotplot(UT_small_GO, showCategory=10)
 
 # Untreated vs Idling - Large
-I_large.markers <- FindMarkers(object = combined, ident.1 = c(0,2,5,7),
-                               ident.2 = c(1,3,4,9), min.pct = 0.25)
-UT_large.markers <- FindMarkers(object = combined, ident.1 = c(1,3,4,9),
-                                ident.2 = c(0,2,5,7), min.pct = 0.25)
+I_large.markers <- FindMarkers(object = combined, ident.1 = c(0,3,5,7),
+                               ident.2 = c(1,2,4,9), min.pct = 0.25)
+# ident.1 = c(0,2,5,7),
+# ident.2 = c(1,3,4,9)
+
+UT_large.markers <- FindMarkers(object = combined, ident.1 = c(1,2,4,9),
+                                ident.2 = c(0,3,5,7), min.pct = 0.25)
+# ident.1 = c(1,3,4,9),
+# ident.2 = c(0,2,5,7)
 
 I_large_GO <- enrichGO(gene = rownames(subset(I_large.markers, avg_log2FC > 0.5)),
                        universe = Features(combined[["RNA"]]),
@@ -494,7 +499,7 @@ I_large_GO <- enrichGO(gene = rownames(subset(I_large.markers, avg_log2FC > 0.5)
                        pvalueCutoff  = 0.01,
                        qvalueCutoff  = 0.05)
 
-dotplot(I_large_GO, showCategory=20)
+dotplot(I_large_GO, showCategory=10)
 
 UT_large_GO <- enrichGO(gene = rownames(subset(UT_large.markers, avg_log2FC > 0.5)),
                         universe = Features(combined[["RNA"]]),
@@ -505,8 +510,7 @@ UT_large_GO <- enrichGO(gene = rownames(subset(UT_large.markers, avg_log2FC > 0.
                         pvalueCutoff  = 0.01,
                         qvalueCutoff  = 0.05)
 
-dotplot(UT_large_GO, showCategory=20)
-
+dotplot(UT_large_GO, showCategory=10)
 
 ### use lineages
 # keep_UT <- as.data.frame(sort(table(untreated@meta.data$lineage), decreasing = TRUE))
@@ -586,6 +590,7 @@ labels = c("1","2","3","4","5","6","7","8","9",
            "10","11","12","13","14","15","16",
            "17","18","19","20","21","22",
            "23","24","25","others")
+
 # DimPlot(combined, reduction = "umap", group.by = "lineageColored") +
 #   # geom_text(x=7, y=6, label=sprintf("%d cells", nrow(combined@meta.data))) +
 #   scale_color_manual(
@@ -640,7 +645,6 @@ ggsave("umap_combined_lineageID_tinted_legendOnly.svg", width = 2.5, height = 4)
 #         plot.title = element_text(size = 16, hjust = 0.5, face = "bold"), axis.text=element_text(size=14),
 #         legend.title = element_text(size=14), axis.title=element_text(size=14))
 #   ggsave("../figures/umap_combined_lineageID_tinted_legendSpecial.svg", width = 3.5, height = 3)
-
 
 # ggplot(data = test_subset, aes(x = umap_1, y = umap_2, color = lineageColored, alpha = Tint1)) +
 #   geom_point(size = 0.8) + scale_alpha_continuous(range = c(0.1,1)) +
@@ -774,8 +778,6 @@ fig_otherBCs <- ggarrange(plotlist=fig_otherBCs_plots, ncol=4, nrow=5)
 ggsave("UMAP_combined_lineageID_tinted_BCs_others.svg", width=8, height=7)
 #################################
 
-####
-
 combined_untreated <- subset(combined, subset = orig.ident == "Untreated")
 combined_idling <- subset(combined, subset = orig.ident == "Idling")
 
@@ -790,10 +792,8 @@ I_UMAP$UMAP2_dist <- (I_UMAP$umap_2 - colMeans(I_UMAP)[2])**2
 I_UMAP$dist <- sqrt(I_UMAP$UMAP1_dist + I_UMAP$UMAP2_dist)
 
 dist_mat <- data.frame(Condition = rep(c("Untreated", "Idling"), 
-                                       times = c(nrow(UT_UMAP), 
-                                                 nrow(I_UMAP))),
+                                       times = c(nrow(UT_UMAP), nrow(I_UMAP))),
                        Distance = c(UT_UMAP$dist, I_UMAP$dist))
-
 
 dist_mat_melt <- melt(dist_mat, id.vars = "Condition", measure.vars = "Distance")
 dist_mat_melt.summary <- aggregate(dist_mat_melt, by = list(dist_mat_melt$Condition),
@@ -822,14 +822,13 @@ dist_mat_melt.summary$Condition <- factor(dist_mat_melt.summary$Condition,
 #         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #   ggsave("SKMEL5_conditions_distFromCentroid_byCondition.svg", width = 2.5, height = 5)
 
-
-###
-
 df1 <- as.data.frame(combined@meta.data)
 df1$State <-  with(df1, ifelse(Phase %in% c("G2M", "S"), yes="Fast_Dividing", no="Slow_Dividing"))
 State <- subset(df1, select = c("State"))
 combined <- AddMetaData(combined, State, col.name = "State")
-save(combined, file = "combined_includingState.RData")
+
+### SAVE .RData FILE HERE ###
+# save(combined, file = "combined_includingState.RData")
 
 # BC-by-BC Number/Proportion of cells in each CC state
 stateBC_df <- FetchData(combined, vars = c("orig.ident", "lineageColored", "State"))
@@ -927,7 +926,6 @@ b %>%
 #         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 #   ggsave("SKMEL5_I_CellCycleState_proportion.pdf", width = 8, height = 5)
 
-
 ggplot(subset(state_byBC, State == "Fast_Dividing" & Condition == "Untreated"), aes(x = as.factor(BCnum), y = freq)) +
   theme_bw() + geom_bar(stat = "identity", position = "dodge", color = "black", fill = "red") +
   geom_hline(yintercept = 0.670, linetype = 2) +
@@ -945,7 +943,8 @@ ggsave("SKMEL5_UT_CellCycleState_onlyDividing_proportionWAverage.pdf", width = 6
 ########### FIGURE 2D ###########
 ggplot(subset(state_byBC, State == "Fast_Dividing" & Condition == "Idling" & BCnum < 25), 
        aes(x = as.factor(BCnum), y = freq)) +
-  theme_bw() + geom_bar(stat = "identity", position = "dodge", color = "black", fill = "blue") +
+  theme_bw() + 
+  geom_bar(stat = "identity", position = "dodge", color = "black", fill = "blue") +
   geom_hline(yintercept = 0.166, linetype = 2) +
   scale_y_continuous(labels = scales::percent) +
   labs(x = "Barcode", y = "% of Fast-Dividing Idling Cells") +
@@ -956,7 +955,8 @@ ggplot(subset(state_byBC, State == "Fast_Dividing" & Condition == "Idling" & BCn
         legend.title = element_blank(), axis.title=element_text(size=14),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
-ggsave("SKMEL5_I_CellCycleState_onlyDividing_proportionWAverage.pdf", width = 6, height = 4)
+ggsave("SKMEL5_I_CellCycleState_onlyDividing_proportionWAverage.pdf", 
+       width = 6, height = 4)
 #################################
 
 # ggplot(state_all_table_byBC_melt, aes(x = Condition, y = value,
@@ -1001,7 +1001,7 @@ plt_treat <- ggplot(test_twoState, aes(x = umap_1, y = umap_2)) +
         plot.title = element_text(size = 12, hjust = 0.5, face = "bold"), 
         axis.text=element_text(size=14),
         legend.title = element_text(size=12), axis.title=element_text(size=12)) 
-# plt_treat 
+plt_treat 
 ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentPoint.svg", width=4, 
        height=3)
 #################################
@@ -1039,8 +1039,6 @@ ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_treatmentDensity_CCStatePoint.svg",
 # as_ggplot(plt_state_leg) 
 # ggsave("UMAP_state_legend.svg", width = 2.5, height = 4)
 
-
-
 test_twoState_UT <- subset(test_twoState, old.ident == "Untreated")
 test_twoState_UT$Region <- with(test_twoState_UT, 
                                 ifelse(seurat_clusters %in% as.factor(c("1","3","4","9")), 
@@ -1050,7 +1048,6 @@ test_twoState_I <- subset(test_twoState, old.ident == "Idling")
 test_twoState_I$Region <- with(test_twoState_I, 
                              ifelse(seurat_clusters %in% as.factor(c("0","2","5","7")), 
                                     yes="large", no="small"))
-
 
 region_UT_table <- test_twoState_UT[,c("State", "Region")]
 region_UT_table <- region_UT_table %>% 
@@ -1079,7 +1076,6 @@ region_all_table$name <- factor(region_all_table$name,
                                 levels = c("UT_L", "UT_S", "I_L", "I_S"))
 # region_all_table$tot <- c()
 
-
 region_all_table_n <- region_all_table %>%
   dplyr::group_by(name) %>%
   dplyr::summarise (num = sum(n))
@@ -1090,7 +1086,7 @@ region_all_n <- data.frame(name = unique(region_all_table_n$name),
                                      paste("n =", as.character(region_all_table_n$num[3])),
                                      paste("n =", as.character(region_all_table_n$num[4]))))
 
-########### FIGURE 1E ########### NEED TO FIX THIS - CLUSTERS CHANGE
+########### FIGURE 1E ###########
 ggplot(region_all_table, aes(x = name, y = freq, group = State, fill = State)) +
   theme_classic() + 
   geom_bar(stat = "identity", color = "black") +
@@ -1111,26 +1107,21 @@ ggplot(region_all_table, aes(x = name, y = freq, group = State, fill = State)) +
 ggsave("SKMEL5_allClusters_CellCycleState_proportion.pdf", width = 6, height = 5)
 #################################
 
-####
-
-EMD_data_UT <- subset(FetchData(combined, vars = c("umap_1", "umap_2", "old.ident", "BCnum", "lineageColored")), 
-                      old.ident == "Untreated")
-D_UT <- dist(cbind(EMD_data_UT$umap_1, EMD_data_UT$umap_2), 
-          diag=TRUE, upper=TRUE) 
+EMD_data_UT <- subset(FetchData(
+  combined, vars = c("umap_1", "umap_2", "old.ident", "BCnum", "lineageColored")), 
+  old.ident == "Untreated")
+D_UT <- dist(cbind(EMD_data_UT$umap_1, EMD_data_UT$umap_2), diag=TRUE, upper=TRUE) 
 m_UT <- as.matrix(D_UT) # coerce dist object to a matrix
-dimnames(m_UT) <- list(1:length(EMD_data_UT$umap_1),
-                    1:length(EMD_data_UT$umap_2))
+dimnames(m_UT) <- list(1:length(EMD_data_UT$umap_1), 1:length(EMD_data_UT$umap_2))
 xy_UT <- t(combn(colnames(m_UT), 2))
 df_UT_EMD <- data.frame(xy_UT, dist=m_UT[xy_UT])
 df_UT_EMD$Condition <- "Untreated"
 
 EMD_data_I <- subset(FetchData(combined, vars = c("umap_1", "umap_2", "old.ident", "BCnum", "lineageColored")), 
                       old.ident == "Idling")
-D_I <- dist(cbind(EMD_data_I$umap_1, EMD_data_I$umap_2), 
-             diag=TRUE, upper=TRUE) 
+D_I <- dist(cbind(EMD_data_I$umap_1, EMD_data_I$umap_2), diag=TRUE, upper=TRUE) 
 m_I <- as.matrix(D_I) # coerce dist object to a matrix
-dimnames(m_I) <- list(1:length(EMD_data_I$umap_1),
-                       1:length(EMD_data_I$umap_2))
+dimnames(m_I) <- list(1:length(EMD_data_I$umap_1), 1:length(EMD_data_I$umap_2))
 xy_I <- t(combn(colnames(m_I), 2))
 df_I_EMD <- data.frame(xy_I, dist=m_I[xy_I])
 df_I_EMD$Condition <- "Idling"
@@ -1145,6 +1136,7 @@ EMD_compare <- wasserstein1d(df_all_EMD_UT$dist, df_all_EMD_I$dist)
 
 df_all_EMD_sample$Condition <- factor(df_all_EMD_sample$Condition,
                                       levels = c("Untreated", "Idling"))
+
 ggplot(df_all_EMD_sample, aes(dist, color = Condition)) + 
   theme_bw() + stat_ecdf(size = 1.25) +
   scale_color_manual(values = c("red", "blue")) +
