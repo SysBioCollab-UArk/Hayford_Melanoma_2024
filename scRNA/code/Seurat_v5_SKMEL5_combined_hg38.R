@@ -828,7 +828,7 @@ State <- subset(df1, select = c("State"))
 combined <- AddMetaData(combined, State, col.name = "State")
 
 ### SAVE .RData FILE HERE ###
-# save(combined, file = "combined_includingState.RData")
+save(combined, file = "combined_includingState.RData")
 
 # BC-by-BC Number/Proportion of cells in each CC state
 stateBC_df <- FetchData(combined, vars = c("orig.ident", "lineageColored", "State"))
