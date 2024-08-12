@@ -20,7 +20,7 @@ txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
 # }
 
 ## RNAseq ##
-load(file="../data/untreatedIdling_DEA.RData")
+load(file=file.path("..", "data", "untreatedIdling_DEA.RData"))
 
 OrgDB <- org.Hs.eg.db
 upreg_genes <- subset(results_0to8d, padj<0.05 & log2FoldChange>2)
@@ -65,37 +65,38 @@ ego_genesUp_CC <- clusterProfiler::enrichGO(gene  = genes_up_ENTREZID,
 ## Non-downsampled idling
 # load("/Volumes/Transcend/ATACseq/SKMEL5_ATAC_annotatedPeaks_uniqueShared.RData")
 ## Downsampled idling
-load("../../ATAC/data/SKMEL5_ATACsub25_annotatedPeaks_uniqueShared.RData")
+load(file.path("..", "..", "ATAC", "data", 
+               "SKMEL5_ATACsub25_annotatedPeaks_uniqueShared.RData"))
 
+go_UT_BP <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, 
+                     OrgDb = "org.Hs.eg.db", ont = "BP", maxGSSize = 5000)
+go_I_BP <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, 
+                    OrgDb = "org.Hs.eg.db", ont = "BP", maxGSSize = 5000)
+go_con_BP <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, 
+                      OrgDb = "org.Hs.eg.db", ont = "BP", maxGSSize = 5000)
 
-go_UT_BP <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, OrgDb = "org.Hs.eg.db", 
-                     ont = "BP", maxGSSize = 5000)
-go_I_BP <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, OrgDb = "org.Hs.eg.db", 
-                    ont = "BP", maxGSSize = 5000)
-go_con_BP <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.Hs.eg.db", 
-                      ont = "BP", maxGSSize = 5000)
+go_UT_MF <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, 
+                     OrgDb = "org.Hs.eg.db", ont = "MF", maxGSSize = 5000)
+go_I_MF <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, 
+                    OrgDb = "org.Hs.eg.db", ont = "MF", maxGSSize = 5000)
+go_con_MF <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, 
+                      OrgDb = "org.Hs.eg.db", ont = "MF", maxGSSize = 5000)
 
-go_UT_MF <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, OrgDb = "org.Hs.eg.db", 
-                     ont = "MF", maxGSSize = 5000)
-go_I_MF <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, OrgDb = "org.Hs.eg.db", 
-                    ont = "MF", maxGSSize = 5000)
-go_con_MF <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.Hs.eg.db", 
-                      ont = "MF", maxGSSize = 5000)
-
-go_UT_CC <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, OrgDb = "org.Hs.eg.db", 
-                     ont = "CC", maxGSSize = 5000)
-go_I_CC <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, OrgDb = "org.Hs.eg.db", 
-                    ont = "CC", maxGSSize = 5000)
-go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.Hs.eg.db", 
-                      ont = "CC", maxGSSize = 5000)
+go_UT_CC <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, 
+                     OrgDb = "org.Hs.eg.db", ont = "CC", maxGSSize = 5000)
+go_I_CC <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, 
+                    OrgDb = "org.Hs.eg.db", ont = "CC", maxGSSize = 5000)
+go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, 
+                      OrgDb = "org.Hs.eg.db", ont = "CC", maxGSSize = 5000)
 ## ##
-
 
 ## Pull top GO terms from each data modality
 # BP
-RNA_Up_BP <- subset(ego_genesUp_BP@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
+RNA_Up_BP <- 
+  subset(ego_genesUp_BP@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
 RNA_Up_BP$logp <- -log(RNA_Up_BP$qvalue)
-ATAC_Up_BP <- subset(go_I_BP@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
+ATAC_Up_BP <- 
+  subset(go_I_BP@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
 ATAC_Up_BP$logp <- -log(ATAC_Up_BP$qvalue)
 
 Up_all_BP <- merge(x=RNA_Up_BP, y=ATAC_Up_BP, by="Description", all.x = T, all.y = T)
@@ -113,9 +114,11 @@ ggplot(Up_all_BP_complete_sorted, aes(x=logp.x, y=logp.y, label=Description)) +
 ggsave("GO-RNA-ATACsub25_pvalComparison_BP.pdf", width = 8, height = 6)
 
 # MF
-RNA_Up_MF <- subset(ego_genesUp_MF@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
+RNA_Up_MF <- 
+  subset(ego_genesUp_MF@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
 RNA_Up_MF$logp <- -log(RNA_Up_MF$qvalue)
-ATAC_Up_MF <- subset(go_I_MF@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
+ATAC_Up_MF <- 
+  subset(go_I_MF@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
 ATAC_Up_MF$logp <- -log(ATAC_Up_MF$qvalue)
 
 Up_all_MF <- merge(x=RNA_Up_MF, y=ATAC_Up_MF, by="Description", all.x = T, all.y = T)
@@ -133,9 +136,11 @@ ggplot(Up_all_MF_complete_sorted, aes(x=logp.x, y=logp.y, label=Description)) +
 ggsave("GO-RNA-ATACsub25_pvalComparison_MF.pdf", width = 8, height = 6)
 
 # CC
-RNA_Up_CC <- subset(ego_genesUp_CC@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
+RNA_Up_CC <- 
+  subset(ego_genesUp_CC@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
 RNA_Up_CC$logp <- -log(RNA_Up_CC$qvalue)
-ATAC_Up_CC <- subset(go_I_CC@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
+ATAC_Up_CC <- 
+  subset(go_I_CC@result, qvalue < 0.05)[,c("ID", "Description", "GeneRatio", "qvalue")]
 ATAC_Up_CC$logp <- -log(ATAC_Up_CC$qvalue)
 
 Up_all_CC <- merge(x=RNA_Up_CC, y=ATAC_Up_CC, by="Description", all.x = T, all.y = T)
@@ -157,7 +162,8 @@ Up_all_BP_complete_sorted$GOtype <- "BP"
 Up_all_MF_complete_sorted$GOtype <- "MF"
 Up_all_CC_complete_sorted$GOtype <- "CC"
 
-Up_all_GO <- rbind(Up_all_BP_complete_sorted, Up_all_MF_complete_sorted, Up_all_CC_complete_sorted)
+Up_all_GO <- rbind(Up_all_BP_complete_sorted, Up_all_MF_complete_sorted, 
+                   Up_all_CC_complete_sorted)
 Up_all_GO$GOtype <- factor(Up_all_GO$GOtype, levels = c("BP", "MF", "CC"))
 
 # ggscatter(Up_all_GO, 

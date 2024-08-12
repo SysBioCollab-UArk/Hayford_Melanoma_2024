@@ -20,26 +20,22 @@ library(tidyr)
 #   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # }
 
-blkList <- import.bed("../data/ENCFF356LFX.bed.gz")
+blkList <- import.bed(file.path("..", "data", "ENCFF356LFX.bed.gz"))
 chrs <- c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8",
           "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16",
           "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY")
 
-openRegionPeaks_UT <- "../data/untreated_all_peaks.narrowPeak_peaks.narrowPeak"
-qcRes_UT <- ChIPQCsample("../data/bam/trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_aligned_sorted_dedup_unique_fullClean.bam",
-                         peaks = openRegionPeaks_UT,
-                         annotation ="hg38",
-                         chromosomes = chrs,
-                         blacklist = blkList,
-                         verboseT = FALSE)
+openRegionPeaks_UT <- file.path("..", "data", "untreated_all_peaks.narrowPeak_peaks.narrowPeak")
+qcRes_UT <- ChIPQCsample(
+  file.path("..", "data", "bam", "trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_aligned_sorted_dedup_unique_fullClean.bam"),
+  peaks = openRegionPeaks_UT, annotation ="hg38", chromosomes = chrs, 
+  blacklist = blkList, verboseT = FALSE)
 
-openRegionPeaks_I <- "../data/idling_peaks.narrowPeak"
-qcRes_I <- ChIPQCsample("../data/bam/idling_subsample_25p_dedup_unique_fullClean.bam",
-                        peaks = openRegionPeaks_I,
-                        annotation ="hg38",
-                        chromosomes = chrs,
-                        blacklist = blkList,
-                        verboseT = FALSE)
+openRegionPeaks_I <- file.path("..", "data", "idling_peaks.narrowPeak")
+qcRes_I <- ChIPQCsample(
+  file.path("..", "data", "bam", "idling_subsample_25p_dedup_unique_fullClean.bam"), 
+  peaks = openRegionPeaks_I, annotation ="hg38", chromosomes = chrs, 
+  blacklist = blkList, verboseT = FALSE)
 
 # save(qcRes_UT, qcRes_I, file = "allPeaks_narrow_idlingSub25.RData")
 
@@ -113,8 +109,9 @@ shared_peaks <- c("Untreated" = vd_counts$freq[2],
 ########### FIGURE S3C ###########
 pdf('venn_sharedPeaks.pdf', width=4, height=4)
 venn_sharedPeaks <- euler(shared_peaks)
-plot(venn_sharedPeaks, fills = c("red", "lightblue"), shape = "ellipse", 
-     quantities = TRUE)
+p <- plot(venn_sharedPeaks, fills = c("red", "lightblue"), shape = "ellipse", 
+          quantities = TRUE)
+plot(p)
 dev.off()
 ##################################
 
@@ -148,27 +145,26 @@ anno_con <- annotatePeak(CTC_con, TxDb = TxDb.Hsapiens.UCSC.hg38.knownGene)
 
 # Unique - submit to great, GO, cluster profiler
 library(org.Hs.eg.db)
-go_UT_BP <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, OrgDb = "org.Hs.eg.db", 
-                     ont = "BP", maxGSSize = 5000)
-go_I_BP <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, OrgDb = "org.Hs.eg.db", 
-                    ont = "BP", maxGSSize = 5000)
-go_con_BP <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.Hs.eg.db", 
-                      ont = "BP", maxGSSize = 5000)
+go_UT_BP <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, 
+                     OrgDb = "org.Hs.eg.db", ont = "BP", maxGSSize = 5000)
+go_I_BP <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, 
+                    OrgDb = "org.Hs.eg.db", ont = "BP", maxGSSize = 5000)
+go_con_BP <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, 
+                      OrgDb = "org.Hs.eg.db", ont = "BP", maxGSSize = 5000)
 
-go_UT_MF <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, OrgDb = "org.Hs.eg.db", 
-                     ont = "MF", maxGSSize = 5000)
-go_I_MF <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, OrgDb = "org.Hs.eg.db", 
-                    ont = "MF", maxGSSize = 5000)
-go_con_MF <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.Hs.eg.db", 
-                      ont = "MF", maxGSSize = 5000)
+go_UT_MF <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, 
+                     OrgDb = "org.Hs.eg.db", ont = "MF", maxGSSize = 5000)
+go_I_MF <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, 
+                    OrgDb = "org.Hs.eg.db", ont = "MF", maxGSSize = 5000)
+go_con_MF <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, 
+                      OrgDb = "org.Hs.eg.db", ont = "MF", maxGSSize = 5000)
 
-go_UT_CC <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, OrgDb = "org.Hs.eg.db", 
-                     ont = "CC", maxGSSize = 5000)
-go_I_CC <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, OrgDb = "org.Hs.eg.db", 
-                    ont = "CC", maxGSSize = 5000)
-go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, OrgDb = "org.Hs.eg.db", 
-                      ont = "CC", maxGSSize = 5000)
-
+go_UT_CC <- enrichGO(as.data.frame(as.GRanges(anno_UT))$geneId, 
+                     OrgDb = "org.Hs.eg.db", ont = "CC", maxGSSize = 5000)
+go_I_CC <- enrichGO(as.data.frame(as.GRanges(anno_I))$geneId, 
+                    OrgDb = "org.Hs.eg.db", ont = "CC", maxGSSize = 5000)
+go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId, 
+                      OrgDb = "org.Hs.eg.db", ont = "CC", maxGSSize = 5000)
 
 # dotplot(go_UT_BP) + ggsave("GOenrichment_sub25_UT_BP.pdf", width = 8, height = 5)
 # dotplot(go_I_BP)
@@ -198,7 +194,6 @@ ggsave("GOenrichment_sub25_I_MF.pdf", width = 6, height = 6)
 # dotplot(go_I_CC)
 # ggsave("GOenrichment_sub25_I_CC.pdf") #, width = 8, height = 5)
 # dotplot(go_con_CC) + ggsave("GOenrichment_sub25_con_CC.pdf", width = 8, height = 5)
-
 
 df <- data.frame(UT_MF = go_UT_MF@result$Description[1:25],
                  I_MF = go_I_MF@result$Description[1:25],

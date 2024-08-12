@@ -16,7 +16,7 @@ library(ggpubr)
 
 ### Load dataset
 ```{r}
-DATADIR <- "../data"
+DATADIR <- file.path("..", "data")
 fn <- "VQU_008_CPA_3add_1tip_FLUO-8_AM_Feb_12_21_1023.txt"
 fn_filepath <- file.path(DATADIR, fn)
 CaFlux <- read.csv(fn_filepath, sep = "\t")

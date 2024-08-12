@@ -5,8 +5,8 @@ library(ggplot2)
 #   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # }
 
-bcDat <- read.csv('../data/bcPlot.csv')
-bcNum <- read.csv('../data/bcCount_allTechReps.csv')
+bcDat <- read.csv(file.path('..', 'data', 'bcPlot.csv'))
+bcNum <- read.csv(file.path('..', 'data', 'bcCount_allTechReps.csv'))
 
 numReads <- data.frame(Untreated = c(5340832,5750058,6238661),
                        Idling = c(6153559,5634086,6160163))

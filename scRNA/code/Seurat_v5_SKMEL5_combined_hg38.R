@@ -17,15 +17,9 @@ options(Seurat.object.assay.version = "v5")
 #   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # }
 
-### MOVE THIS LOGIC INTO createPlotsForPaper2024.R ###
-if (file.exists("combined_includingState.RData")) {
-  message("The file 'combined_includingState.RData' already exists. Stopping this script to prevent running it again.")
-  stop()
-}
-
-# Pull this from the data I shared on Box (data_large)
-untreated <- Read10X(data.dir = "../data/Untreated/")
-idling <- Read10X(data.dir = "../data/Idling/")
+# Pull in the data
+untreated <- Read10X(data.dir = file.path("..", "data", "Untreated"))
+idling <- Read10X(data.dir = file.path("..", "data", "Idling"))
 
 # Initialize the Seurat object with the raw (non-normalized data).
 untreated <- CreateSeuratObject(counts = untreated, project = "Untreated", 
@@ -36,7 +30,8 @@ idling <- CreateSeuratObject(counts = idling, project = "Idling",
 # Add lineage information
 ## Untreated
 cellMeta_untreated <- untreated@meta.data
-barcode_cell_df_UT <- read.csv("../data/Untreated_LineageBC_cellBC.csv")
+barcode_cell_df_UT <- 
+  read.csv(file.path("..", "data", "Untreated_LineageBC_cellBC.csv"))
 barcode_cell_df_UT <- as.data.frame(t(barcode_cell_df_UT))
 colnames(barcode_cell_df_UT) <- c("Barcode", "Cell Barcode")
 barcode_cell_UT <- barcode_cell_df_UT[-1,]
@@ -50,12 +45,14 @@ untreated <- AddMetaData(untreated, lineageMeta_UT, col.name = "lineage")
 
 ## Idling
 cellMeta_idling <- idling@meta.data
-barcode_cell_df_I <- as.data.frame(t(read.csv("../data/Treated_LineageBC_cellBC.csv")))
+barcode_cell_df_I <- as.data.frame(t(read.csv(
+  file.path("..", "data", "Treated_LineageBC_cellBC.csv"))))
 colnames(barcode_cell_df_I) <- c("Barcode", "Cell Barcode")
 barcode_cell_I <- barcode_cell_df_I[-1,]
 barcode_cell_I$`Cell Barcode` <- paste(barcode_cell_I$`Cell Barcode`, "-1", sep="")
-cellMeta_idling$lineage <- as.character(barcode_cell_I$Barcode[match(rownames(cellMeta_idling),
-                                                                     barcode_cell_I$`Cell Barcode`)])
+cellMeta_idling$lineage <- 
+  as.character(barcode_cell_I$Barcode[match(rownames(cellMeta_idling), 
+                                            barcode_cell_I$`Cell Barcode`)])
 cellMeta_idling$lineage[nchar(as.character(cellMeta_idling$lineage)) != 20] <- "XXX"
 lineageMeta_I <- subset(cellMeta_idling, select = "lineage")
 idling <- AddMetaData(idling, lineageMeta_I, col.name = "lineage")
@@ -96,9 +93,8 @@ combined <- SCTransform(combined, assay = 'RNA', new.assay.name = 'SCT',
 all.genes <- rownames(combined)
 combined <- ScaleData(combined, assay = 'SCT', features = all.genes)
 
-# Running the PCA here (stochastic, can't set a seed) #####
-# NOTE: Documentation says the seed for this is also set to 42 by default
-combined <- RunPCA(combined, assay = 'SCT', 
+# Run the PCA (seed is set to 42 by default) #####
+combined <- RunPCA(combined, assay = 'SCT', seed.use = 42,
                    features = VariableFeatures(object = combined))
 VizDimLoadings(combined, dims = 1:2, reduction = "pca")
 DimPlot(combined, reduction = "pca")
@@ -107,7 +103,7 @@ combined <- FindNeighbors(combined, assay = 'SCT', dims = 1:10) # 10 clusters
 combined <- FindClusters(combined, assay = 'SCT', resolution = 0.5)
 
 # When RunUMAP is called, default seed is set to 42 #####
-combined <- RunUMAP(combined, assay = 'SCT', dims = 1:10)
+combined <- RunUMAP(combined, assay = 'SCT', dims = 1:10, seed.use = 42)
 
 DimPlot(combined, reduction = "umap", group.by = "orig.ident") +
   theme_bw() + scale_color_manual(values = c("blue", "red")) +
@@ -133,13 +129,15 @@ DimPlot(combined, reduction = "umap", group.by = "State") +
   # xlim(-11.5, 11.5) + ylim(-11.5, 11.5)
 ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_CCState_leg.svg", width = 4, height = 3)
 
-### NEED THIS PLOT FOR SEURAT CLUSTERS ###
+########### FIGURE S1A ###########
 DimPlot(combined, reduction = "umap", group.by = "seurat_clusters") +
   theme_bw() + #scale_color_manual(values = c("blue", "red")) +
-  theme(axis.text = element_text(size = 14), legend.position = "right",
+  xlab("UMAP 1") + ylab("UMAP 2") +
+  theme(plot.title = element_blank(), axis.text = element_text(size = 12), 
+        legend.position = "right", legend.text = element_text(size = 12), 
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-  ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_clusters_leg.pdf", width = 5, height = 3)
-######
+  ggsave("UMAP_combined_SKMEL5_hg38_qcCCReg_clusters.pdf", width = 4.7, height = 3)
+##################################
 
 # Determine metrics to plot present in seurat_control@meta.data
 metrics <-  c("nCount_RNA", "nFeature_RNA", "S.Score", "G2M.Score", "percent.mt")
@@ -210,13 +208,15 @@ phase_all$Condition <- factor(phase_all$Condition,
 
 # Percentages
 phase_UT_table <- as.data.frame.matrix(table(phase_UT))
-phase_UT_table <- transform(phase_UT_table, percent = Untreated / sum(phase_UT_table$Untreated))
+phase_UT_table <- transform(phase_UT_table, 
+                            percent = Untreated / sum(phase_UT_table$Untreated))
 phase_UT_table$Phase <- rownames(phase_UT_table)
 phase_UT_table$Condition <- "Untreated"
 names(phase_UT_table) <- c("Count", "Percent", "Phase", "Condition")
 
 phase_I_table <- as.data.frame.matrix(table(phase_I))
-phase_I_table <- transform(phase_I_table, percent = Idling / sum(phase_I_table$Idling))
+phase_I_table <- transform(phase_I_table, 
+                           percent = Idling / sum(phase_I_table$Idling))
 phase_I_table$Phase <- rownames(phase_I_table)
 phase_I_table$Condition <- "Idling"
 names(phase_I_table) <- c("Count", "Percent", "Phase", "Condition")
@@ -285,7 +285,8 @@ state_UT_table$Condition <- "Untreated"
 names(state_UT_table) <- c("Count", "Percent", "State", "Condition")
 
 state_I_table <- as.data.frame.matrix(table(state_I))
-state_I_table <- transform(state_I_table, percent = Idling / sum(state_I_table$Idling))
+state_I_table <- transform(state_I_table, 
+                           percent = Idling / sum(state_I_table$Idling))
 state_I_table$State <- rownames(state_I_table)
 state_I_table$Condition <- "Idling"
 names(state_I_table) <- c("Count", "Percent", "State", "Condition")
@@ -349,7 +350,7 @@ I_cycling_GO <-
 
 library(enrichplot)
 library(scales)
-########### FIGURE S1B ###########
+########### FIGURE S1C ###########
 dotplot(I_cycling_GO, showCategory=10, label_format=50)  + 
   labs(x="Gene Ratio") +
   theme(plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
@@ -426,7 +427,7 @@ UT_outcast_GO <- enrichGO(gene = rownames(subset(UT_outcast.markers, avg_log2FC 
                   pvalueCutoff  = 0.01,
                   qvalueCutoff  = 0.05)
 
-########### FIGURE S1A ###########
+########### FIGURE S1B ###########
 dotplot(UT_outcast_GO, showCategory=10, label_format = 70) + 
   labs(x="Gene Ratio") +
   theme(plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
@@ -522,7 +523,7 @@ dotplot(UT_large_GO, showCategory=10)
 # bc_30 <- Reduce(intersect, list(keep_UT_30$Var1, keep_I_30$Var1))
 
 # Use top25 untreated lineages
-load("../data/top25BCs.RData")
+load(file.path("..", "data", "top25BCs.RData"))
 bcs_top25 <- as.character(unique(bcNum_prop_compare_sub$Barcode))
 bc_not <- setdiff(combined@meta.data$lineage, bcs_top25)
 test <- combined@meta.data
@@ -767,7 +768,10 @@ for (i in seq(24)){
   if (!dir.exists("UMAP_top25BCs_byNum")){
     dir.create("UMAP_top25BCs_byNum")
   }
-  ggsave(paste0("UMAP_top25BCs_byNum/umap_combined_lineageID_tinted_legendSpecial_top25_Barcode", i, ".svg"), width = 4, height = 3)
+  ggsave(file.path(
+    "UMAP_top25BCs_byNum", 
+    paste0("umap_combined_lineageID_tinted_legendSpecial_top25_Barcode", i, ".svg")), 
+    width = 4, height = 3)
 }
 
 fig_4BCs <- ggarrange(fig_4BCs_plots[[1]], fig_4BCs_plots[[2]], 

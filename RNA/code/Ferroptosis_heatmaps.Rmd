@@ -14,6 +14,7 @@ library(ggplot2)
 library(scales)
 library(pheatmap)
 library(gplots) # needed for color palettes, redblue(), colorRampPalette()
+library(SummarizedExperiment)
 
 if(!"ComplexHeatmap" %in% installed.packages()) BiocManager::install("ComplexHeatmap")
 library(ComplexHeatmap)
@@ -27,17 +28,21 @@ SAVEPLOTS <- TRUE
 
 
 ```{r Load data}
-load("../data/merged_countdata.RData") # object countdata
-Ferr <- read.delim("../data/KEGGFerroptosis_hsa04216_06-25-18.txt", header=T, stringsAsFactors = F)
+load(file.path("..", "data", "merged_countdata.RData")) # object countdata
+Ferr <- 
+  read.delim(file.path("..", "data", "KEGGFerroptosis_hsa04216_06-25-18.txt"), 
+             header=T, stringsAsFactors = F)
 ferr_genes <- Ferr$GeneName  # ferroptosis genes from KEGG (2018)
-load("../data/RLD_SC-1,7,10_0,3,8d_20180701.RData")  # object rld
+load(file.path("..", "data", "RLD_SC-1,7,10_0,3,8d_20180701.RData"))  # object rld
 ```
 
 Another ferroptosis gene list from Wikipathways/GSEA: https://www.gsea-msigdb.org/gsea/msigdb/cards/WP_FERROPTOSIS.html
 File downloaded 2024-01-14 and saved in `../data/WP_FERROPTOSIS.v2023.2.Hs.tsv`
 
 ```{r}
-ferr_genes_wikipw_raw <- read.table('../data/WP_FERROPTOSIS.v2023.2.Hs.tsv', sep="\t", row.names=1)
+ferr_genes_wikipw_raw <- 
+  read.table(file.path('..', 'data', 'WP_FERROPTOSIS.v2023.2.Hs.tsv'), 
+             sep="\t", row.names=1)
 ferr_genes_wikipw <- ferr_genes_wikipw_raw["GENE_SYMBOLS",]
 ferr_genes_wikipw <- unlist(strsplit(ferr_genes_wikipw,","))
 ferr_genes_wikipw <- ferr_genes_wikipw[ferr_genes_wikipw!=""]
@@ -171,7 +176,9 @@ ImpRat = c("SC01_day3/SC01_day0", "SC01_day8/SC01_day0",
            "SC10_day3/SC10_day0", "SC10_day8/SC10_day0")
 Imp_fold <- GE_fold[,ImpRat]
 
-Ferr <- read.delim("../data/KEGGFerroptosis_hsa04216_06-25-18.txt", header=T, stringsAsFactors = F)
+Ferr <- 
+  read.delim(file.path("..", "data", "KEGGFerroptosis_hsa04216_06-25-18.txt"), 
+             header=T, stringsAsFactors = F)
 Ferr_fold <- Imp_fold[rownames(Imp_fold) %in% ferr_genes_4plots,]
 
 Ferr_fold$Gene <- rownames(Ferr_fold)
@@ -215,10 +222,15 @@ dtp <- dtp[!rownames(dtp) %in% excl_genes,]
 colnames(dtp) <- gsub("day","D",colnames(dtp)) 
 mycolors <- colorRampPalette(c("darkblue","blue","white","red","red4"))(50)
 
-gplots::heatmap.2(dtp, dendrogram="none", scale="none", Rowv=FALSE, Colv=FALSE, trace="none", tracecol=NA,
-                  col=mycolors, srtCol=0, adjCol=0.5, colsep=c(2,4), offsetRow=-35, adjRow=c(1, 0.5),
-                  cexCol = 0.2 + 0.75/log10(ncol(dtp)), cex.lab=0.5,
-                  keysize=1, key.title=NA, key.ylab=NA, key.xlab="Log2 fold change", key.par=list(mar=c(6,3,5,1)))
+f <- function(){
+  gplots::heatmap.2(dtp, dendrogram="none", scale="none", Rowv=FALSE, Colv=FALSE, 
+                    trace="none", tracecol=NA, col=mycolors, srtCol=0, adjCol=0.5, 
+                    colsep=c(2,4), offsetRow=-35, adjRow=c(1, 0.5), 
+                    cexCol = 0.2 + 0.75/log10(ncol(dtp)), cex.lab=0.5, keysize=1, 
+                    key.title=NA, key.ylab=NA, key.xlab="Log2 fold change", 
+                    key.par=list(mar=c(6,3,5,1)))
+}
+tryCatch(f(), error = function(e){message('', e, 'Continuing...')})
 ```
 
 ### Gene annotations
@@ -237,11 +249,14 @@ annot_col <- c("orange","yellow","green","turquoise","purple","red","brown",grey
 
 
 ```{r}
-ferr_genes_annot <- read.csv("../data/ferroptosis_gene_annot.csv")
+ferr_genes_annot <- 
+  read.csv(file.path("..", "data", "ferroptosis_gene_annot.csv"))
 ferr_genes_annot[ferr_genes_annot==""] <- NA
-annots <- unique(unlist(apply(ferr_genes_annot[,grep("annot",colnames(ferr_genes_annot))],2,unique)))
+annots <- 
+  unique(unlist(apply(ferr_genes_annot[,grep("annot",colnames(ferr_genes_annot))],2,unique)))
 annots <- annots[!is.na(annots)]
-annots_col <- c("yellow","purple",grey(0.5),"black","red","orange","green","turquoise","brown")
+annots_col <- 
+  c("yellow","purple",grey(0.5),"black","red","orange","green","turquoise","brown")
 names(annots_col) <- annots
 
 dat <- Ferr_fold[order(match(Ferr_fold$Gene,ferr_genes_annot$gene_name)),]
@@ -258,9 +273,9 @@ fer <- list(genes=Ferr_fold$Gene,
 ## Using `ComplexHeatmap()`
 
 ```{r fig.height=8, fig.width=8}
-########### FIGURE 3B ###########
+########### FIGURE 4A ###########
 if(SAVEPLOTS)
-    cairo_pdf("Ferroptosis_heatmap_annot.pdf", width = 4.5, height = 8)
+    pdf("Ferroptosis_heatmap_annot.pdf", width = 4.5, height = 8)
 
 # global Heatmap options
 ht_opt(
@@ -308,7 +323,7 @@ draw(ht_list, padding = unit(c(4, 4, 4, 4), "mm")) # padding(b,l,t,r)
 
 # make the combined legend
 if(SAVEPLOTS)
-    cairo_pdf("Ferroptosis_heatmap_annot_legend.pdf", width = 4, height = 2)
+    pdf("Ferroptosis_heatmap_annot_legend.pdf", width = 4, height = 2)
 
 ldg1 <- color_mapping_legend(ht_list@ht_list[[1]]@matrix_color_mapping, plot = FALSE)
 ldg2 <- color_mapping_legend(ht_list@ht_list[[2]]@matrix_color_mapping, plot = FALSE,

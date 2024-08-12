@@ -34,15 +34,31 @@ OVERWRITE <- FALSE
 
 ### Assembling data to include gene HGNC symbols as names
 This only needs to be run once to generate the proper data matrix for further analysis.
-```{r Data assembly, eval=FALSE, include=TRUE, echo=TRUE}
+```{r Data assembly, eval=TRUE, include=TRUE, echo=TRUE}
 
+hosts <- c("https://useast.ensembl.org",
+          "https://www.ensembl.org",
+          "https://asia.ensembl.org")
 
-ensembl <- useMart( biomart="ensembl",
-                    dataset="hsapiens_gene_ensembl",
-                    host="https://useast.ensembl.org")
-mart <- useDataset("hsapiens_gene_ensembl", mart= ensembl, verbose= FALSE)
+f <- function(host){
+  return(
+    useMart(biomart="ensembl", dataset="hsapiens_gene_ensembl", host=host)
+  )
+}
 
-d <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=',')
+# Try the different mirror sites, break out of the loop when one works
+for(host in hosts){
+  message(paste('Trying', host))
+  try({ 
+    ensembl <- f(host) 
+    break 
+  }, silent = FALSE)
+}
+
+mart <- useDataset("hsapiens_gene_ensembl", mart=ensembl, verbose=FALSE)
+
+d <- read.csv(file.path("..", "data", "featureCounts_matrix_all.csv"), 
+              header=T, sep=',')
 
 #Rename columns
 cols <- c("ensembl_gene_id", "SC01_day0_rep1", "SC01_day0_rep2", "SC01_day0_rep3",
@@ -76,13 +92,15 @@ d$hgnc_symbol <- NULL
 d <- d[apply(d, 1, function(x) all(x > 5)),]
 
 # write the data to a new file
-fn <- "../data/SKMEL5_subclone_BRAFi_timecourse_RNAseq_data.csv"
+fn <- file.path("..", "data", "SKMEL5_subclone_BRAFi_timecourse_RNAseq_data.csv")
 if(!file.exists(fn) | OVERWRITE) write.csv(d, fn)
 ```
 
 ### Load data
 ```{r}
-d <- read.csv("../data/SKMEL5_subclone_BRAFi_timecourse_RNAseq_data.csv", row.names=1)
+d <- read.csv(
+  file.path("..", "data", "SKMEL5_subclone_BRAFi_timecourse_RNAseq_data.csv"), 
+  row.names=1)
 ```
 
 ### Convert data to ExpressionSet
@@ -317,10 +335,21 @@ http://purl.obolibrary.org/obo/GO_0006874
 GO:0051480
 
 ```{r}
-# We should put a try/catch block here in case the useast host is down
-ensembl <- useMart( biomart="ensembl",
-                    dataset="hsapiens_gene_ensembl",
-                    host="https://useast.ensembl.org")
+f <- function(host){
+  return(
+    useMart(biomart="ensembl", dataset="hsapiens_gene_ensembl", host=host)
+  )
+}
+
+# Try the different mirror sites (defined above), break out of the loop when one works
+for(host in hosts){
+  message(paste('Trying', host))
+  try({ 
+    ensembl <- f(host) 
+    break 
+  }, silent = FALSE)
+}
+
 mart <- useDataset("hsapiens_gene_ensembl", mart= ensembl, verbose= FALSE)
 
 m <- getBM(attributes = c('ensembl_gene_id','external_gene_name', 'hgnc_symbol','name_1006'), 
@@ -456,6 +485,7 @@ hm <- Heatmap(x, name="Log2 Fold Change", col = col_fun, row_names_gp = gpar(fon
                                     labels_gp = gpar(fontsize = 20),
                                     title_gp = gpar(fontsize = 20)))
 draw(hm, heatmap_legend_side = "bottom")
+dev.off()
 #################################
 ```
 
@@ -521,9 +551,10 @@ refmtData <- function(dat=d, genes=GENE_LIST)
 ```
 
 
-```{r eval=FALSE}
+```{r eval=TRUE}
 z <- refmtData(genes=ALLGENES)
-if(SAVEFILES) write.csv(z, "~/Desktop/SKMEL5_subclone_BRAFi_l2FC_d3and8.csv")
+if(!file.exists(fn) | OVERWRITE) 
+  write.csv(z, file.path("..", "data", "SKMEL5_subclone_BRAFi_l2FC_d3and8.csv"))
 ```
 
 ```{r}

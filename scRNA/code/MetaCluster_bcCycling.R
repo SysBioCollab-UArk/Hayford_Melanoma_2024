@@ -12,7 +12,7 @@ if (!file.exists("combined_includingState.RData")){
 load("combined_includingState.RData")
 DimPlot(combined, reduction = "umap", group.by = "seurat_clusters")
 
-load("../data/top25BCs.RData")
+load(file.path("..", "data", "top25BCs.RData"))
 bcs_top25 <- as.character(unique(bcNum_prop_compare_sub$Barcode))
 bc_not <- setdiff(combined@meta.data$lineage, bcs_top25)
 test <- combined@meta.data
@@ -170,7 +170,7 @@ ggplot(subset(meta_cluster_byBC_x, cluster_size == "Small"), aes(x = as.factor(B
 
 ####### Correlation
 
-load("../data/barcodeFC_forCorPlot.RData")
+load(file.path("..", "data", "barcodeFC_forCorPlot.RData"))
 names(test_hist1) <- c("FC", "Class", "BCnum", "lineage")
 bcFC <- test_hist1[,c("lineage", "BCnum", "FC")]
 
@@ -200,6 +200,7 @@ names(compareBCs_top25) <- c("BCnum", "lineage", "FC", "prop_I")
 ########### FIGURE 2E ###########
 ggscatter(subset(compareBCs_top25, as.numeric(BCnum) < 25), # remove BC #25
           x="prop_I", y="FC", add="reg.line", size=1) +
+  geom_smooth(method = "lm", color = "black") +
   stat_cor(method="pearson", aes(label = after_stat(r.label)), size = 5) +
   ggrepel::geom_label_repel(aes(label=BCnum)) +
   scale_x_continuous(labels = scales::percent) +

@@ -164,8 +164,7 @@ getIC50 <- function(dat, State, drug2) {
 
 ```{r Load & process data}
 
-listDir = list.files("../data", pattern = "*.txt", full.names=TRUE)
-
+listDir = list.files(file.path("..", "data"), pattern = "*.txt", full.names=TRUE)
 
 data = list()
 test = list()
@@ -173,14 +172,14 @@ for(i in 1:length(listDir)){
   data[i] = list(countIJ(listDir[i]))
 }
 
-#Load platemaps
+# Load platemaps
+Eras = read.delim(file.path("..", "Platemaps", "ErastinDR plate map.txt"), 
+                  header=TRUE, sep="\t")
+RSL3 = read.delim(file.path("..", "Platemaps", "RSL3DR plate map.txt"), 
+                  header=TRUE, sep="\t")
 
-Eras = read.delim("../Platemaps/ErastinDR plate map.txt", header=TRUE, sep="\t")
-RSL3 = read.delim("../Platemaps/RSL3DR plate map.txt", header=TRUE, sep="\t")
-
-
-# ============================================================================================================
-# ============================================================================================================
+# ==============================================================================
+# ==============================================================================
 
 #Apply platemap and find the ln2 growth curve
 

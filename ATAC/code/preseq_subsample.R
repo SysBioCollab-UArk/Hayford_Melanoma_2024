@@ -39,25 +39,32 @@ library(ggpubr)
 
 #####
 
-
-c_res_UT <- read_tsv('../data/trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_aligned_sorted_cCurveResults.txt') %>%
+c_res_UT <- 
+  read_tsv(file.path('..', 'data', 'trimmed_3334-CH-1-TAGGCATG-ACTGCATA_S121_aligned_sorted_cCurveResults.txt')) %>%
   mutate(Library="Untreated")
 
-c_res_I <- read_tsv('../data/trimmed_3334-CH-2-CGTACTAG-CTCTCTAT_S122_aligned_sorted_cCurveResults.txt') %>%
+c_res_I <- 
+  read_tsv(file.path('..', 'data', 'trimmed_3334-CH-2-CGTACTAG-CTCTCTAT_S122_aligned_sorted_cCurveResults.txt')) %>%
   mutate(Library="Idling")
 
-c_res_I_25 <- read_tsv('../data/idling_subsample_25p_dedup_cCurveResults.txt') %>%
+c_res_I_25 <- 
+  read_tsv(file.path('..', 'data', 'idling_subsample_25p_dedup_cCurveResults.txt')) %>%
   mutate(Library="Idling_25")
-c_res_I_33 <- read_tsv('../data/idling_subsample_33p_dedup_cCurveResults.txt') %>%
+c_res_I_33 <- 
+  read_tsv(file.path('..', 'data', 'idling_subsample_33p_dedup_cCurveResults.txt')) %>%
   mutate(Library="Idling_33")
-c_res_I_50 <- read_tsv('../data/idling_subsample_50p_dedup_cCurveResults.txt') %>%
+c_res_I_50 <- 
+  read_tsv(file.path('..', 'data', 'idling_subsample_50p_dedup_cCurveResults.txt')) %>%
   mutate(Library="Idling_50")
 
-c_res_I_25_dedup <- read_tsv('../data/idling_subsample_25p_dedup_cCurveResults.txt') %>%
+c_res_I_25_dedup <- 
+  read_tsv(file.path('..', 'data', 'idling_subsample_25p_dedup_cCurveResults.txt')) %>%
   mutate(Library="Idling_25_dedup")
-c_res_I_33_dedup <- read_tsv('../data/idling_subsample_33p_dedup_cCurveResults.txt') %>%
+c_res_I_33_dedup <- 
+  read_tsv(file.path('..', 'data', 'idling_subsample_33p_dedup_cCurveResults.txt')) %>%
   mutate(Library="Idling_33_dedup")
-c_res_I_50_dedup <- read_tsv('../data/idling_subsample_50p_dedup_cCurveResults.txt') %>%
+c_res_I_50_dedup <- 
+  read_tsv(file.path('..', 'data', 'idling_subsample_50p_dedup_cCurveResults.txt')) %>%
   mutate(Library="Idling_50_dedup")
 
 c_res <- bind_rows(c_res_UT, c_res_I_25, c_res_I_25_dedup)
@@ -83,17 +90,18 @@ ggplot(c_res) + theme_bw() +
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank())
 
-
 # Final plots comparing libraries
 ## Not modified
 c_res_full <- bind_rows(c_res_UT, c_res_I)
 c_res_full <- as.data.frame(c_res_full)
-c_res_full$Library <- factor(c_res_full$Library, levels = c("Untreated", "Idling"))
+c_res_full$Library <- factor(c_res_full$Library, 
+                             levels = c("Untreated", "Idling"))
 
 ## Idling subsampled (25%)
 c_res_sub <- bind_rows(c_res_UT, c_res_I_25)
 c_res_sub <- as.data.frame(c_res_sub)
-c_res_sub$Library <- factor(c_res_sub$Library, levels = c("Untreated", "Idling_25"))
+c_res_sub$Library <- factor(c_res_sub$Library, 
+                            levels = c("Untreated", "Idling_25"))
 
 # ## Not modified plot
 # ggplot(c_res_full) + theme_bw() +
@@ -176,35 +184,48 @@ ggsave("cCurve_IdlingSubsampled_SKMEL5.pdf", width = 4, height = 3)
 insert_UT_dedup <- read_tsv('../data/untreated_dedup_ISM.txt', 
                       skip = 10) %>%
   mutate(Library="Untreated")
-insert_UT_dedup <- mutate(insert_UT_dedup, cpm=(All_Reads.fr_count/sum(insert_UT_dedup$All_Reads.fr_count))*1e6)
+insert_UT_dedup <- 
+  mutate(insert_UT_dedup, 
+         cpm=(All_Reads.fr_count/sum(insert_UT_dedup$All_Reads.fr_count))*1e6)
 
 ## Idling
-insert_I_dedup <- read_tsv('../data/idling_dedup_ISM.txt', 
-                     skip = 10) %>%
+insert_I_dedup <- 
+  read_tsv(file.path('..', 'data', 'idling_dedup_ISM.txt'), skip = 10) %>%
   mutate(Library="Idling")
-insert_I_dedup <- mutate(insert_I_dedup, cpm=(All_Reads.fr_count/sum(insert_I_dedup$All_Reads.fr_count))*1e6)
+insert_I_dedup <- 
+  mutate(insert_I_dedup, 
+         cpm=(All_Reads.fr_count/sum(insert_I_dedup$All_Reads.fr_count))*1e6)
 
 ## Subsampled Idling
 ## 25 percent
-insert_I_25_dedup <- read_tsv('../data/idling_subsample_25p_dedup_ISM.txt', skip = 10) %>%
+insert_I_25_dedup <- 
+  read_tsv(file.path('..', 'data', 'idling_subsample_25p_dedup_ISM.txt'), skip = 10) %>%
   mutate(Library="Idling_25")
-insert_I_25_dedup <- mutate(insert_I_25_dedup, cpm=(All_Reads.fr_count/sum(insert_I_25_dedup$All_Reads.fr_count))*1e6)
+insert_I_25_dedup <- 
+  mutate(insert_I_25_dedup, 
+         cpm=(All_Reads.fr_count/sum(insert_I_25_dedup$All_Reads.fr_count))*1e6)
 
 ## 33 percent
-insert_I_33_dedup <- read_tsv('../data/idling_subsample_33p_dedup_ISM.txt', skip = 10) %>%
+insert_I_33_dedup <- 
+  read_tsv(file.path('..', 'data', 'idling_subsample_33p_dedup_ISM.txt'), skip = 10) %>%
   mutate(Library="Idling_33")
-insert_I_33_dedup <- mutate(insert_I_33_dedup, cpm=(All_Reads.fr_count/sum(insert_I_33_dedup$All_Reads.fr_count))*1e6)
+insert_I_33_dedup <- 
+  mutate(insert_I_33_dedup, 
+         cpm=(All_Reads.fr_count/sum(insert_I_33_dedup$All_Reads.fr_count))*1e6)
 
 ## 50 percent
-insert_I_50_dedup <- read_tsv('../data/idling_subsample_50p_dedup_ISM.txt', skip = 10) %>%
+insert_I_50_dedup <- 
+  read_tsv(file.path('..', 'data', 'idling_subsample_50p_dedup_ISM.txt'), skip = 10) %>%
   mutate(Library="Idling_50")
-insert_I_50_dedup <- mutate(insert_I_50_dedup, cpm=(All_Reads.fr_count/sum(insert_I_50_dedup$All_Reads.fr_count))*1e6)
-
+insert_I_50_dedup <- 
+  mutate(insert_I_50_dedup, 
+         cpm=(All_Reads.fr_count/sum(insert_I_50_dedup$All_Reads.fr_count))*1e6)
 
 insert_all_dedup <- bind_rows(insert_UT_dedup, insert_I_dedup, insert_I_25_dedup, 
                               insert_I_33_dedup, insert_I_50_dedup)
-insert_all_dedup$Library <- factor(insert_all_dedup$Library, 
-                             levels = c("Untreated", "Idling", "Idling_25", "Idling_33", "Idling_50"))
+insert_all_dedup$Library <- 
+  factor(insert_all_dedup$Library, 
+         levels = c("Untreated", "Idling", "Idling_25", "Idling_33", "Idling_50"))
 
 # ggplot(insert_all_dedup, aes(x=insert_size, y=All_Reads.fr_count, color=Library)) +
 #   geom_line(size = 0.7) +
@@ -223,7 +244,6 @@ insert_all_dedup$Library <- factor(insert_all_dedup$Library,
 #         axis.title=element_text(size=14),
 #         panel.grid.major = element_blank(), 
 #         panel.grid.minor = element_blank()) 
-
 
 ### Final Plots from subsampled libraries
 insert_subsampled_dedup <- bind_rows(insert_UT_dedup, insert_I_25_dedup)
@@ -269,7 +289,8 @@ insert_subsampled_dedup$Library <- factor(insert_subsampled_dedup$Library,
 # Create legend for colors
 c_res_colors <- bind_rows(c_res_UT, c_res_I, c_res_I_25)
 c_res_colors <- as.data.frame(c_res_colors)
-c_res_colors$Library <- factor(c_res_colors$Library, levels = c("Untreated", "Idling", "Idling_25"))
+c_res_colors$Library <- 
+  factor(c_res_colors$Library, levels = c("Untreated", "Idling", "Idling_25"))
 
 ########### FIGURE S3A ###########
 ggplot(c_res_colors) + theme_bw() +

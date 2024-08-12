@@ -13,10 +13,12 @@ library(clusterProfiler)
 # }
 
 ## Get the data in the right format
-d <- read.csv("../data/featureCounts_matrix_all.csv", header=T, sep=",")
+d <- read.csv(file.path("..", "data", "featureCounts_matrix_all.csv"), 
+              header=T, sep=",")
 
 #Rename columns
-cols <- c("ensembl_gene_id", "SC01_day0_rep1", "SC01_day0_rep2", "SC01_day0_rep3",
+cols <- c("ensembl_gene_id", 
+          "SC01_day0_rep1", "SC01_day0_rep2", "SC01_day0_rep3",
           "SC01_day3_rep1", "SC01_day3_rep2", "SC01_day3_rep3",
           "SC01_day8_rep1", "SC01_day8_rep2", "SC01_day8_rep3",
           "SC07_day0_rep1", "SC07_day0_rep2", "SC07_day0_rep3",
