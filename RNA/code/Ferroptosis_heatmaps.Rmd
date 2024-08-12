@@ -100,7 +100,7 @@ Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=log2(value), group = interaction(v
 
 if(SHOWPLOTS) Fer_ggploted
 
-if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_rawCounts_SKMEL5sublines+treatment.pdf") #, width = 20, height = 25)
+if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_rawCounts_SKMEL5sublines+treatment.pdf", width = 20, height = 25)
 ```
 
 
@@ -137,7 +137,7 @@ Fer_ggploted <- ggplot(Fer_dat, aes(x=Time, y=value, group = interaction(variabl
 
 if(SHOWPLOTS) Fer_ggploted
 
-if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_normCounts_SKMEL5sublines+treatment.pdf") #, width = 20, height = 25)
+if(SAVEPLOTS) ggsave("FerroptosisGeneSignature_normCounts_SKMEL5sublines+treatment.pdf", width = 20, height = 25)
 ```
 
 
@@ -212,7 +212,7 @@ myplot <- ggplot(Ferr_fold_melt, aes(variable, Gene, fill = value)) +
         panel.grid.minor = element_blank())
 
 if(SHOWPLOTS) myplot
-if(SAVEPLOTS) ggsave("Ferroptosis_FCHM_selected_wide.pdf") #, width = 8, height = 8)
+if(SAVEPLOTS) ggsave("Ferroptosis_FCHM_selected_wide.pdf", width = 8, height = 8)
 ```
 
 ```{r fig.height=10, fig.width=8}
@@ -247,7 +247,6 @@ annot <- c("Glutathione Metabolism",
 annot_col <- c("orange","yellow","green","turquoise","purple","red","brown",grey(0.5))
 ```
 
-
 ```{r}
 ferr_genes_annot <- 
   read.csv(file.path("..", "data", "ferroptosis_gene_annot.csv"))
@@ -271,8 +270,8 @@ fer <- list(genes=Ferr_fold$Gene,
 
 
 ## Using `ComplexHeatmap()`
-
-```{r fig.height=8, fig.width=8}
+#{r fig.height=8, fig.width=8}
+```{r}
 ########### FIGURE 4A ###########
 if(SAVEPLOTS)
     pdf("Ferroptosis_heatmap_annot.pdf", width = 4.5, height = 8)
@@ -336,6 +335,7 @@ pd23 <- packLegend(ldg2, ldg3, row_gap = unit(0, "mm"))
 pd123 <- packLegend(ldg1, pd23, direction = "horizontal")
 
 draw(pd123)
+
 dev.off()
 #################################
 ```

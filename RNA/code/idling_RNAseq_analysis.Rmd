@@ -410,9 +410,9 @@ b <- b[order(apply(b, 1, function(x) max(x)), decreasing = TRUE), ]
 ```
 
 
-```{r fig.height=4, fig.width=3}
+```{r fig.height=10, fig.width=5, eval=FALSE}
 if(SAVEPLOT) 
-    pdf(file="ca-genes_fold-change_heatmap.pdf") #, height=6, width=4)
+    pdf(file="ca-genes_fold-change_heatmap.pdf", height=10, width=5)
 heatmap.2(as.matrix(b), Rowv=FALSE, Colv=FALSE, dendrogram="none",
           scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
           col=bluered(20), key.title=NA, key.xlab="Fold change, log2", key.ylab=NA,
@@ -431,9 +431,9 @@ heatmap.2(as.matrix(b), Rowv=FALSE, Colv=FALSE, dendrogram="none",
 ```
 
 Remove 0 time point columns and replot; also adjusted first argument in `mar` in `key.par` to be 6 (spacing above plot to bottom of color key). 
-```{r fig.height=6, fig.width=4}
+```{r fig.height=10, fig.width=5}
 if(SAVEPLOT) 
-    pdf(file="ca-genes_fold-change_heatmap.pdf") #, height=6, width=4)
+    pdf(file="ca-genes_fold-change_heatmap.pdf", height=10, width=5)
 hm2 <- heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]),
           Rowv=FALSE, Colv=FALSE, dendrogram="none",
           scale = "none", cexRow=0.4, cexCol=0.75, trace = "none",
@@ -450,6 +450,7 @@ hm2 <- heatmap.2(as.matrix(b[,!grepl("_0",colnames(b))]),
                                as.character(signif(breaks[length(breaks)],2)))
                  ))}
           )
+dev.off()
 ```
 
 ```{r}

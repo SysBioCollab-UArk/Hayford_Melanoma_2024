@@ -39,7 +39,6 @@ countIJ <- function(platefile){
   
 }
 
-
 platDrug <- function(platemap, countdata){
   
   rows = as.character(platemap$X)
@@ -158,7 +157,6 @@ getIC50 <- function(dat, State, drug2) {
   )
   ic_50
 }
-
 ```
 
 
@@ -188,7 +186,6 @@ iRSL3 = platDrug(RSL3, as.data.frame(data[2]))
 pEras = platDrug(Eras, as.data.frame(data[3]))
 pRSL3 = platDrug(RSL3, as.data.frame(data[4]))
 comb = list(iEras,iRSL3,pEras,pRSL3)
-
 ```
 
 ```{r Analyse dose-response, warning=FALSE}
@@ -271,7 +268,7 @@ ggplot(RSL3_UTvI_all, aes(x=conc, y=p, color=State, fill=State)) +
         axis.title=element_text(size=12),
         panel.grid = element_blank(), rect=element_rect(fill="transparent"))
 
-if(SAVEPLOTS) ggsave("RSL3-all_DRC_2024.pdf")
+if(SAVEPLOTS) ggsave("RSL3-all_DRC_2024.pdf", width=3.5, height=5)
 ##################################
 ```
 

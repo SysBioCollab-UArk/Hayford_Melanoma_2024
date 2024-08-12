@@ -364,10 +364,7 @@ bc_abundance <- ggplot(bcNum_prop_compare_sub, aes(x=Barcode, y=value, group = S
   geom_bar(stat = "identity", position = "dodge", color = "black", linewidth = 0.2) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=0.2,
                 position=position_dodge(0.9)) +
-  # geom_ribbon(data = bcNum_model_prop_compare_sub,
-  #             aes(x = Barcode, y = value, ymin=value-sd, ymax=value+sd),
-  #             alpha=0.1, color = "blue", fill = "blue") +
-  # coord_flip() + ylab("Barcode Fraction") + xlab("Population") +
+  guides(fill  = guide_legend(position = "inside")) +
   xlab("Barcode") + ylab("Barcode Fraction") +
   theme_classic() + scale_fill_manual(values = c('red', 'blue')) +
   scale_x_discrete(labels= factor(seq(nrow(bcNum_prop_compare_sub)/2))) +
@@ -443,7 +440,7 @@ plt_hist_BCoverlay <- ggplot(test_hist1, aes(x=x)) + theme_bw() +
     legend.key.size = unit(12, "pt"))
 
 plt_hist_BCoverlay
-ggsave("SKMEL5_barcode_FCdensity_bcOverlay.pdf") #, width = 3.5, height = 3)
+ggsave("SKMEL5_barcode_FCdensity_bcOverlay.pdf", width = 5, height = 4)
 #################################
 # plt_hist_BCoverlay_leg <- ggpubr::get_legend(plt_hist_BCoverlay)
 # ggpubr::as_ggplot(plt_hist_BCoverlay_leg)
