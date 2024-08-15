@@ -224,7 +224,7 @@ ggscatter(Up_all_CC_complete_sorted, x = "logp.x", y = "logp.y",
           add = "reg.line", size = 1) +
   geom_smooth(method = "lm", color = "black") +
   stat_cor(method = "spearman", aes(label = after_stat(r.label)), size = 6,
-           label.x.npc=0.1, label.y.npc=0.95) +
+           label.x.npc=0, label.y.npc=0.95) +
   ggrepel::geom_label_repel(data = Up_all_CC_complete_sorted[1:10,],
                             aes(label = Description), size = 4) +
   theme_bw() +
