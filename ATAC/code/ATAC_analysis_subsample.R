@@ -133,7 +133,6 @@ CTC_I <- consensusToCount[(elementMetadata(consensusToCount)[,"Untreated"] == 0)
 CTC_con <- consensusToCount[(elementMetadata(consensusToCount)[,"Untreated"] == 1) &
                               (elementMetadata(consensusToCount)[,"Idling"] == 1)]
 
-
 anno_UT <- annotatePeak(CTC_UT, TxDb = TxDb.Hsapiens.UCSC.hg38.knownGene)
 anno_I <- annotatePeak(CTC_I, TxDb = TxDb.Hsapiens.UCSC.hg38.knownGene)
 anno_con <- annotatePeak(CTC_con, TxDb = TxDb.Hsapiens.UCSC.hg38.knownGene)
@@ -175,7 +174,7 @@ go_con_CC <- enrichGO(as.data.frame(as.GRanges(anno_con))$geneId,
 
 ########### FIGURE 3C ###########
 library(scales)
-dotplot(go_I_MF, font.size = 14, label_format = 40) + 
+enrichplot::dotplot(go_I_MF, font.size = 14, label_format = 40) + 
   labs(x="Gene Ratio") +
   theme(legend.text = element_text(size = 12),
         plot.title = element_text(size = 14, hjust = 0.5, face = "bold"), 
