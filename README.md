@@ -19,14 +19,16 @@
     - The large, slow-dividing untreated cluster (UTL) includes the remaining Seurat clusters in the largest untreated cluster, i.e., the large red cluster in the second plot. In the example below, this corresponds to Seurat cluster numbers 1 2 4 9.
     - **Example for defining Seurat clusters**:
       
-        Initial prompt in the R console
+        - Initial prompt in the R console
           <img width="874" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Initial" src="https://github.com/user-attachments/assets/3852d939-3901-4ad2-ab77-22a8e576190e">
+          
 
-        `UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf` for this example
-      
-          <img width="404" alt="Screenshot_UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots" src="https://github.com/user-attachments/assets/78281af4-e477-42f5-a100-5f6eb34ff408">
+        - `UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf` for this example
+          
+        <img width="404" alt="Screenshot_UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots" src="https://github.com/user-attachments/assets/b5fe33f2-6803-47ec-ad3e-dd2461310389">
 
-        Final image of prompt in the R console
+  
+        - Final image of prompt in the R console
           <img width="872" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Final" src="https://github.com/user-attachments/assets/22beae9f-9e97-41cd-b2e0-011e8fdf372a">
 
       
