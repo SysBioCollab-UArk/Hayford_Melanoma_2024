@@ -18,15 +18,16 @@
     - The small, fast-dividing untreated cluster (UTS) includes the Seurat cluster that corresponds to the smaller untreated cluster, i.e., the small red cluster in the second plot. In the example below, this corresponds to Seurat cluster number 8.
     - The large, slow-dividing untreated cluster (UTL) includes the remaining Seurat clusters in the largest untreated cluster, i.e., the large red cluster in the second plot. In the example below, this corresponds to Seurat cluster numbers 1 2 4 9.
     - **Example for defining Seurat clusters**:
-      Initial prompt in the R console
-        <img width="874" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Initial" src="https://github.com/user-attachments/assets/3852d939-3901-4ad2-ab77-22a8e576190e">
-
-      `UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf` for this example
       
-        <img width="404" alt="Screenshot_UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots" src="https://github.com/user-attachments/assets/78281af4-e477-42f5-a100-5f6eb34ff408">
+        Initial prompt in the R console
+          <img width="874" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Initial" src="https://github.com/user-attachments/assets/3852d939-3901-4ad2-ab77-22a8e576190e">
 
-      Final image of prompt in the R console
-        <img width="872" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Final" src="https://github.com/user-attachments/assets/22beae9f-9e97-41cd-b2e0-011e8fdf372a">
+        `UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf` for this example
+      
+          <img width="404" alt="Screenshot_UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots" src="https://github.com/user-attachments/assets/78281af4-e477-42f5-a100-5f6eb34ff408">
+
+        Final image of prompt in the R console
+          <img width="872" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Final" src="https://github.com/user-attachments/assets/22beae9f-9e97-41cd-b2e0-011e8fdf372a">
 
       
   - All panels will be saved to a ``_HAYFORD_2024_PAPER_PLOTS`` directory created by the ``createPlotsForPaper2024.R`` script.
