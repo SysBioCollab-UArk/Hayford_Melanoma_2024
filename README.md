@@ -12,7 +12,7 @@
 
 #### To create all of the main and supplementary figures in one script, run ``createPlotsForPaper2024.R`` in the [Hayford_Melanoma_2024](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main) directory. 
   - When the ``Seurat_v5_SKMEL5_combined_hg38.R`` script runs in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, a prompt for assigning the Seurat clusters will ask you to enter which Seurat clusters are associated with the small idling cluster (IS), large idling cluster (IL), small untreated cluster (UTS), and large untreated cluster (UTL). 
-    - Open the ``.pdf`` file in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory. 
+    - Open the ``UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf`` file in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory. 
     - The small, fast-dividing idling cluster (IS) includes the Seurat cluster with the largest proportion of fast-dividing cells, i.e., the cluster that includes the blue points in the second plot and mostly green points in the third plot. In the example below, this corresponds to Seurat cluster number 5.
     - The large, slow-dividing idling cluster (IL) includes the remaining Seurat clusters in the idling cluster, i.e., the predominantly blue cluster(s) in the second plot. In the example below, this corresponds to Seurat cluster numbers 0 3 6 7.
     - The small, fast-dividing untreated cluster (UTS) includes the Seurat cluster that corresponds to the smaller untreated cluster, i.e., the small red cluster in the second plot. In the example below, this corresponds to Seurat cluster number 8.
