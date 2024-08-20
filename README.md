@@ -22,7 +22,7 @@
         <img width="874" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Initial" src="https://github.com/user-attachments/assets/3852d939-3901-4ad2-ab77-22a8e576190e">
 
       `UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf` for this example
-        [UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf](https://github.com/user-attachments/files/16683147/UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf)
+        <img width="404" alt="Screenshot_UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots" src="https://github.com/user-attachments/assets/78281af4-e477-42f5-a100-5f6eb34ff408">
 
       Final image of prompt in the R console
         <img width="872" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Final" src="https://github.com/user-attachments/assets/22beae9f-9e97-41cd-b2e0-011e8fdf372a">
