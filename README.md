@@ -6,6 +6,7 @@
 
 - #### Before running any code, activate the virtual environment by running the following code in the R console:
   `library(renv)`
+  
   `renv::restore()`
   
   This will install all of the packages in the virtual environment. 
@@ -20,6 +21,8 @@
     - **Example for defining Seurat clusters**:
       
         - Initial prompt in the R console
+
+
           <img width="874" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Initial" src="https://github.com/user-attachments/assets/3852d939-3901-4ad2-ab77-22a8e576190e">
           
 
