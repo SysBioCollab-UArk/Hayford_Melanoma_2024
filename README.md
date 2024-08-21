@@ -4,12 +4,14 @@
 
 ### ***&ast;Instructions for creating panels in all main and supplementary figures based on experimental data in this repository***
 
-- #### Before running any code, activate the virtual environment by running the following code in the R console:
+- #### Before running any code, open the `Hayford_Melanoma_2024.Rproj` file and activate the virtual environment by running the following code in the R console:
   `library(renv)`
   
   `renv::restore()`
   
-  This will install all of the packages in the virtual environment. 
+  This will install all of the packages in the virtual environment.
+
+  If you get an error about `renv` not being installed, run `install.packages("renv")` to install `renv`. Then run the above commands.
 
 #### To create all of the main and supplementary figures in one script, run ``createPlotsForPaper2024.R`` in the [Hayford_Melanoma_2024](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main) directory. 
   - When the ``Seurat_v5_SKMEL5_combined_hg38.R`` script runs in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, a prompt for assigning the Seurat clusters will ask you to enter which Seurat clusters are associated with the small idling cluster (IS), large idling cluster (IL), small untreated cluster (UTS), and large untreated cluster (UTL). 
