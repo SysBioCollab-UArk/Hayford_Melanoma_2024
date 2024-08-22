@@ -2,46 +2,58 @@
 
 ---
 
-### ***&ast;Instructions for creating panels in all main and supplementary figures based on experimental data in this repository***
+### **_Instructions for creating all panels of the main and supplementary figures using the experimental data included in this repository_:**
 
-- #### Before running any code, open the `Hayford_Melanoma_2024.Rproj` file and activate the virtual environment by running the following code in the R console:
-  `library(renv)`
+#### Before running any code, open the `Hayford_Melanoma_2024.Rproj` file and activate the virtual environment by running the following code in the R console:
+
+```
+library(renv)
+renv::restore()
+```
   
-  `renv::restore()`
+This will install all of the required packages in the virtual environment.
+
+- NOTE: If you get an error about `renv` not being installed, run `install.packages("renv")` to install `renv`. Then run the above commands.
+
+#### The easiest way to create all the panels in the main and supplementary figures is to run the `createPlotsForPaper2024.R` script in the [main](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main) directory. This script will loop through the following directories, in the specified order, running all `.R` and `.Rmd` files in those directories:
+```
+barcoding/code
+dose_response/code
+GO_correlations/code
+ion_flux/code
+RNA/code
+scRNA/code
+ATAC/code
+```
+After finishing each directory, `createPlotsForPaper2024.R` copies specific plots output by the `.R` and `.Rmd` files in that directory to the `_HAYFORD_2024_PAPER_PLOTS` directory (automatically created by `createPlotsForPaper2024.R`) and renames them based on which figure panel they correspond to. For example, `SKMEL5_barcode_propRankAbundance_comparison.pdf`, created by `barcoding/code/bcSamplingPlot.R`, is renamed `Fig_2A.pdf`. 
+  - NOTE: When the ``Seurat_v5_SKMEL5_combined_hg38.R`` script runs in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, a prompt will appear asking you to enter which Seurat clusters are associated with the small idling cluster (IS), large idling cluster (IL), small untreated cluster (UTS), and large untreated cluster (UTL).
+
+    <img width="874" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Initial" src="https://github.com/user-attachments/assets/3852d939-3901-4ad2-ab77-22a8e576190e">
   
-  This will install all of the packages in the virtual environment.
+    This is because the UMAP projection for the single-cell RNA sequencing data is not reproducible across machines. As such, the Seurat cluster indices associated with the IS, IL, UTS, and UTL clusters will also vary from machine to machine and need to be input manually in order for the downstream analyses to be performed correctly. A detailed explanation of the steps to follow is provided below:
 
-  If you get an error about `renv` not being installed, run `install.packages("renv")` to install `renv`. Then run the above commands.
-
-#### To create all of the main and supplementary figures in one script, run ``createPlotsForPaper2024.R`` in the [Hayford_Melanoma_2024](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main) directory. 
-  - When the ``Seurat_v5_SKMEL5_combined_hg38.R`` script runs in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, a prompt for assigning the Seurat clusters will ask you to enter which Seurat clusters are associated with the small idling cluster (IS), large idling cluster (IL), small untreated cluster (UTS), and large untreated cluster (UTL). 
-    - Open the ``UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf`` file in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory. 
-    - The small, fast-dividing idling cluster (IS) includes the Seurat cluster with the largest proportion of fast-dividing cells, i.e., the cluster that includes the blue points in the second plot and mostly green points in the third plot. In the example below, this corresponds to Seurat cluster number 5.
-    - The large, slow-dividing idling cluster (IL) includes the remaining Seurat clusters in the idling cluster, i.e., the predominantly blue cluster(s) in the second plot. In the example below, this corresponds to Seurat cluster numbers 0 3 6 7.
-    - The small, fast-dividing untreated cluster (UTS) includes the Seurat cluster that corresponds to the smaller untreated cluster, i.e., the small red cluster in the second plot. In the example below, this corresponds to Seurat cluster number 8.
-    - The large, slow-dividing untreated cluster (UTL) includes the remaining Seurat clusters in the largest untreated cluster, i.e., the large red cluster in the second plot. In the example below, this corresponds to Seurat cluster numbers 1 2 4 9.
-    - **Example for defining Seurat clusters**:
-      
-        - Initial prompt in the R console
-
-
-          <img width="874" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Initial" src="https://github.com/user-attachments/assets/3852d939-3901-4ad2-ab77-22a8e576190e">
-          
-
-        - `UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf` for this example
-          
-        <img width="404" alt="Screenshot_UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots" src="https://github.com/user-attachments/assets/b5fe33f2-6803-47ec-ad3e-dd2461310389">
-
-  
-        - Final image of prompt in the R console
-          <img width="872" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Final" src="https://github.com/user-attachments/assets/22beae9f-9e97-41cd-b2e0-011e8fdf372a">
-
-      
-  - All panels will be saved to a ``_HAYFORD_2024_PAPER_PLOTS`` directory created by the ``createPlotsForPaper2024.R`` script.
+    1. Open the ``UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf`` file in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory. This figure contains three representations of the same UMAP projection:
+       * _Top row_: Seurat clusters
+       * _Middle row_: Idling vs. untreated cells
+       * _Bottom row_: Fast-dividing vs. slow-dividing cells
     
-#### To create the figures individually, use the information below.
+       Use these three plots to determine the Seurat cluster indices for the IS, IL, UTS, and UTL UMAP clusters, as explained below.
 
-- #### <ins>MAIN FIGURES</ins>
+       <img width="404" alt="Screenshot_UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots" src="https://github.com/user-attachments/assets/b5fe33f2-6803-47ec-ad3e-dd2461310389">
+
+    3. Enter the index for the small, fast-dividing idling UMAP cluster (IS). This includes the Seurat cluster with the largest proportion of fast-dividing cells, i.e., the cluster that includes the blue points in the second plot and mostly green points in the third plot. In the example above, this corresponds to Seurat cluster index 5.
+    4. Enter the indices for the large, slow-dividing idling UMAP cluster (IL). This includes the remaining Seurat clusters in the idling UMAP cluster, i.e., the predominantly blue cluster in the second plot. In the example above, this corresponds to Seurat cluster indices 0 3 6 7.
+    5. Enter the index for the small, fast-dividing untreated UMAP cluster (UTS). This includes the Seurat cluster that corresponds to the smaller untreated UMAP cluster, i.e., the small red cluster in the second plot. In the example above, this corresponds to Seurat cluster index 8.
+    6. Enter the indices for the large, slow-dividing untreated UMAP cluster (UTL). This includes the remaining Seurat clusters in the largest untreated UMAP cluster, i.e., the large red cluster in the second plot. In the example above, this corresponds to Seurat cluster indices 1 2 4 9.
+  - Once you have finished entering the indices for the IS, IL, UTS, and UTL UMAP clusters, you will see the following prompt in the R console. Confirm that the indices are correct and then press [enter]. `createPlotsForPaper2024.R` will then continue running all scripts in the remaining source directories.
+
+    <img width="872" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Final" src="https://github.com/user-attachments/assets/22beae9f-9e97-41cd-b2e0-011e8fdf372a">
+
+---
+
+### **_To create the figure panels individually, follow the instructions below_:**
+
+#### <ins>MAIN FIGURES</ins>
 
   - #### <ins>FIGURE 1</ins>: 
 
@@ -51,8 +63,6 @@
     
     **Panel C**: In the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, run ``VISION_SKMEL5.R``, which pulls data from ``combined_includingState.RData`` created from the ``Seurat_v5_SKMEL5_combined_hg38.R`` script in [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) and VISION hallmark data from [scRNA/data/VISION_hallmark](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data/VISION_hallmark).
 
-
-
   - #### <ins>FIGURE 2</ins>: 
 
     **Panels A and B**: In the [barcoding/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/barcoding/code) directory, run ``bcSamplingPlot.R``, which pulls data from ``bcPlot.csv`` and ``bcCount_allTechReps.csv`` files in [barcoding/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/barcoding/data).
@@ -61,8 +71,6 @@
     
     **Panel E**: In the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, run ``MetaCluster_bcCycling.R``, which pulls data from ``combined_includingState.RData`` created from the ``Seurat_v5_SKMEL5_combined_hg38.R`` script in [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code), data for most abundant barcodes from ``top25BCs.RData`` in [scRNA/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data), and ``barcodeFC_forCorPlot.RData`` in [scRNA/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/data) for the fold change information of the 25 most abundant barcodes. 
     
-    
-
   - #### <ins>FIGURE 3</ins>: 
 
     **Panel A**: In the [RNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/RNA/code) directory, run ``analysis_subclones.R``, which pulls data from ``featureCounts_matrix_all.csv`` in [RNA/data](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/RNA/data).
@@ -83,10 +91,9 @@
 
   - #### <ins>FIGURE 5</ins>: 
 
-    **Panels A and B**: These panels were made using BioRender.
+    **Panels A and B**: These panels were made using [BioRender](https://www.biorender.com).
     
-
-- #### <ins>SUPPLEMENTARY FIGURES</ins>
+#### <ins>SUPPLEMENTARY FIGURES</ins>
 
   - #### <ins>FIGURE S1</ins>:
 
@@ -108,4 +115,4 @@
 
   - #### <ins>FIGURE S4</ins>:
 
-    Figure created using WikiPathways. 
+    Figure created using [WikiPathways](https://www.wikipathways.org). 
