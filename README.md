@@ -28,8 +28,8 @@ ATAC/code
 After finishing each directory, `createPlotsForPaper2024.R` copies specific plots output by the `.R` and `.Rmd` files in that directory to the `_HAYFORD_2024_PAPER_PLOTS` directory (automatically created by `createPlotsForPaper2024.R`) and renames them based on which figure panel they correspond to. For example, `SKMEL5_barcode_propRankAbundance_comparison.pdf`, created by `barcoding/code/bcSamplingPlot.R`, is renamed `Fig_2A.pdf`. 
   - NOTE: When the ``Seurat_v5_SKMEL5_combined_hg38.R`` script runs in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory, a prompt will appear asking you to enter which Seurat clusters are associated with the small idling cluster (IS), large idling cluster (IL), small untreated cluster (UTS), and large untreated cluster (UTL).
 
-    <img width="874" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Initial" src="https://github.com/user-attachments/assets/3852d939-3901-4ad2-ab77-22a8e576190e">
-  
+    <img width="874" src="docs/images/SeuratClusterPrompt_Initial.jpg">
+    
     This is because the UMAP projection for the single-cell RNA sequencing data is not reproducible across machines. As such, the Seurat cluster indices associated with the IS, IL, UTS, and UTL clusters will also vary from machine to machine and need to be input manually in order for the downstream analyses to be performed correctly. A detailed explanation of the steps to follow is provided below:
 
     1. Open the ``UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.pdf`` file in the [scRNA/code](https://github.com/SysBioCollab-UArk/Hayford_Melanoma_2024/tree/main/scRNA/code) directory. This figure contains three representations of the same UMAP projection:
@@ -39,7 +39,7 @@ After finishing each directory, `createPlotsForPaper2024.R` copies specific plot
     
        Use these three plots to determine the Seurat cluster indices for the IS, IL, UTS, and UTL UMAP clusters, as explained below.
 
-       <img width="404" alt="Screenshot_UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots" src="https://github.com/user-attachments/assets/b5fe33f2-6803-47ec-ad3e-dd2461310389">
+       <img width="404" src="docs/images/UMAP_combined_SKMEL5_hg38_qcCCReg_allPlots.png">
 
     3. Enter the index for the small, fast-dividing idling UMAP cluster (IS). This includes the Seurat cluster with the largest proportion of fast-dividing cells, i.e., the cluster that includes the blue points in the second plot and mostly green points in the third plot. In the example above, this corresponds to Seurat cluster index 5.
     4. Enter the indices for the large, slow-dividing idling UMAP cluster (IL). This includes the remaining Seurat clusters in the idling UMAP cluster, i.e., the predominantly blue cluster in the second plot. In the example above, this corresponds to Seurat cluster indices 0 3 6 7.
@@ -47,7 +47,7 @@ After finishing each directory, `createPlotsForPaper2024.R` copies specific plot
     6. Enter the indices for the large, slow-dividing untreated UMAP cluster (UTL). This includes the remaining Seurat clusters in the largest untreated UMAP cluster, i.e., the large red cluster in the second plot. In the example above, this corresponds to Seurat cluster indices 1 2 4 9.
   - Once you have finished entering the indices for the IS, IL, UTS, and UTL UMAP clusters, you will see the following prompt in the R console. Confirm that the indices are correct and then press [enter]. `createPlotsForPaper2024.R` will then continue running all scripts in the remaining source directories.
 
-    <img width="872" alt="Hayford_Melanoma_2024_SeuratClusterPrompt_Final" src="https://github.com/user-attachments/assets/22beae9f-9e97-41cd-b2e0-011e8fdf372a">
+    <img width="874" src="docs/images/SeuratClusterPrompt_Final.jpg">
 
 ---
 
